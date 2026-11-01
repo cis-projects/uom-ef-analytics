@@ -19,6 +19,7 @@ import json
 import os
 import re
 import sys
+import unicodedata
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -151,6 +152,48 @@ def fetch_raw(cfg: dict, api_key: str | None) -> dict:
     print(f"Done: {len(works)} unique works, {oa.calls} API calls")
     return {"fetched_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
             "members": members, "authors": authors, "works": list(works.values())}
+
+
+def recover_missing_papers(oa: OpenAlex, raw: dict, scholar: dict, max_lookups: int = 400) -> int:
+    """Papers on someone's Google Scholar profile that OpenAlex didn't list under their record(s)
+    (usually because OpenAlex split the person into several records). Look each one up by title and,
+    if the OpenAlex copy has an author with the member's name, add it and remember that author ID."""
+    have = {short(w["id"]): w for w in raw["works"]}
+    lookups = found = 0
+    for m in raw["members"]:
+        prof = scholar.get(scholar_id(m.get("scholar")) or "")
+        sig = name_sig(m["name"])
+        if not prof or not sig:
+            continue
+        my_ids = set(m.get("openalex") or [])
+        mine = [w for w in have.values()
+                if any(short((a.get("author") or {}).get("id")) in my_ids for a in w.get("authorships") or [])]
+        mine_titles = {norm_title(w.get("display_name")) for w in mine}
+        for a in prof.get("articles") or []:
+            t = a.get("title") or ""
+            nt = norm_title(t)
+            if len(nt) < 20 or nt in mine_titles or lookups >= max_lookups:
+                continue
+            if scholar_matches([{"id": "x", "title": w.get("display_name")} for w in mine], [t]):
+                continue
+            lookups += 1
+            res = oa.get("/works", search=re.sub(r"[^\w\s]", " ", t)[:250], per_page=5, select=WORK_FIELDS) or {}
+            for w in res.get("results", []):
+                if not scholar_matches([{"id": "x", "title": w.get("display_name")}], [t]):
+                    continue
+                hit = [short((au.get("author") or {}).get("id")) for au in w.get("authorships") or []
+                       if name_sig((au.get("author") or {}).get("display_name") or au.get("raw_author_name")) == sig]
+                if hit and hit[0]:
+                    have.setdefault(short(w["id"]), w)
+                    if hit[0] not in my_ids:
+                        my_ids.add(hit[0])
+                        m.setdefault("openalex", []).append(hit[0])
+                    mine.append(w); mine_titles.add(nt)
+                    found += 1
+                    break
+    raw["works"] = list(have.values())
+    print(f"Recovered {found} paper(s) from Google Scholar titles ({lookups} OpenAlex searches)")
+    return found
 
 
 def fetch_citing_countries(oa: OpenAlex, work_ids: list[str]) -> dict:
@@ -325,6 +368,72 @@ def scholar_matches(works: list[dict], gs_titles: list[str]) -> set[str]:
     return hit
 
 
+def name_sig(name: str | None) -> tuple:
+    """('eduardo', 'oliveira') for 'Eduardo Oliveira' / 'EDUARDO OLIVEIRA' / accented variants."""
+    t = unicodedata.normalize("NFKD", name or "").encode("ascii", "ignore").decode().lower()
+    toks = re.findall(r"[a-z]+", t)
+    return (toks[0], toks[-1]) if len(toks) >= 2 else ()
+
+
+def link_split_profiles(works: dict, members: list[dict], id2slug: dict) -> dict:
+    """OpenAlex sometimes splits one person into several author records. On a paper that already
+    includes a lab member, a co-author whose name matches another member is taken to be that member."""
+    by_sig = {name_sig(m["name"]): m["slug"] for m in members if name_sig(m["name"])}
+    found: dict[str, set] = defaultdict(set)
+    for w in works.values():
+        known = {id2slug[a["id"]] for a in w["authors"] if a["id"] in id2slug}
+        if not known:
+            continue
+        for a in w["authors"]:
+            if not a["id"] or a["id"] in id2slug:
+                continue
+            slug = by_sig.get(name_sig(a["name"]))
+            if slug and slug not in known:
+                found[slug].add(a["id"])
+    for slug, ids in found.items():
+        for i in ids:
+            id2slug[i] = slug
+    return {k: sorted(v) for k, v in found.items()}
+
+
+def filter_by_scholar(works: dict, members: list[dict], scholar: dict, id2slug: dict) -> dict:
+    """Drop papers OpenAlex wrongly gives a member (it sometimes merges namesakes into one record).
+    A paper stays with a member when ANY of these holds:
+      - it is on their Google Scholar profile,
+      - it is on a team colleague's Scholar profile (some profiles aren't kept up to date),
+      - another team member co-authored it,
+      - it shares a co-author with papers already confirmed for them.
+    Namesakes' papers fail all four."""
+    profs = {m["slug"]: scholar.get(scholar_id(m.get("scholar")) or "") for m in members}
+    team_titles = [a.get("title") for p in profs.values() if p for a in p.get("articles") or []]
+    dropped: dict[str, int] = {}
+    for m in members:
+        prof = profs[m["slug"]]
+        if not prof or not prof.get("articles"):
+            continue
+        slug = m["slug"]
+        my_ids = {i for i, s in id2slug.items() if s == slug}
+        mine = [w for w in works.values() if slug in w["lab"]]
+        confirmed = scholar_matches(mine, [a.get("title") for a in prof["articles"]])
+        rest = [w for w in mine if w["id"] not in confirmed]
+        confirmed |= scholar_matches(rest, team_titles)
+        circle = {a["id"] for w in mine if w["id"] in confirmed for a in w["authors"]} - my_ids
+        keep = set(confirmed)
+        for w in mine:
+            if w["id"] in keep:
+                continue
+            others = {a["id"] for a in w["authors"] if a["id"]} - my_ids
+            if any(s != slug for s in w["lab"]) or others & circle:
+                keep.add(w["id"])
+        dropped[slug] = len(mine) - len(keep)
+        for w in mine:
+            if w["id"] not in keep:
+                w["lab"] = [s for s in w["lab"] if s != slug]
+        if dropped[slug]:
+            print(f"  {m['name']}: {dropped[slug]} OpenAlex paper(s) look like a namesake's and were left out")
+    return dropped
+
+
 def apply_scholar(om: dict, prof: dict, oa_works: list[dict], this_year: int) -> None:
     """Replace a member's headline numbers with their Google Scholar profile's."""
     arts = [a for a in prof["articles"] if a.get("title")]
@@ -434,7 +543,12 @@ def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
                 keep["versions"] += 1
                 works.pop(other["id"], None)
 
-    # --- attach lab members to each work
+    # --- attach lab members to each work (catching split OpenAlex profiles first)
+    split = link_split_profiles(works, members, id2slug)
+    for slug, ids in split.items():
+        name = next(m["name"] for m in members if m["slug"] == slug)
+        print(f"  {name} also appears as OpenAlex {', '.join(ids)} on joint papers - "
+              f"add to their openalex: list in lab.yaml to include all of that record's papers")
     for w in works.values():
         w["lab"] = sorted({id2slug[a["id"]] for a in w["authors"] if a["id"] in id2slug})
     works = {k: w for k, w in works.items() if w["lab"]}
@@ -449,18 +563,7 @@ def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
     # sometimes merges namesakes into one author record, which would put strangers in the network.
     dropped: dict[str, int] = {}
     if st.get("scholar_filters_openalex", True):
-        for m in members:
-            prof = scholar.get(scholar_id(m.get("scholar")) or "")
-            if not prof or not prof.get("articles"):
-                continue
-            mine = [w for w in works.values() if m["slug"] in w["lab"]]
-            keep = scholar_matches(mine, [a.get("title") for a in prof["articles"]])
-            dropped[m["slug"]] = len(mine) - len(keep)
-            for w in mine:
-                if w["id"] not in keep:
-                    w["lab"] = [s for s in w["lab"] if s != m["slug"]]
-            if dropped[m["slug"]]:
-                print(f"  {m['name']}: {dropped[m['slug']]} OpenAlex paper(s) not on their Scholar profile left out")
+        dropped = filter_by_scholar(works, members, scholar, id2slug)
         works = {k: w for k, w in works.items() if w["lab"]}
 
     all_years = sorted({int(y) for w in works.values() for y in w["cby"]} |
@@ -511,6 +614,8 @@ def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
         om = out_members[-1]
         om["openalex_counts"] = {"works": om["works"], "citations": om["citations"], "h": om["h"],
                                  "dropped": dropped.get(m["slug"], 0)}
+        om["openalex_extra"] = split.get(m["slug"], [])
+        om["openalex"] = list(om["openalex"]) + om["openalex_extra"]
         prof = scholar.get(scholar_id(m.get("scholar")) or "")
         if prof and prof.get("articles") is not None:
             apply_scholar(om, prof, mine, this_year)
@@ -657,6 +762,12 @@ def main():
         print("Google Scholar profiles...")
         scholar = fetch_scholar(raw["members"], os.environ.get("SERPAPI_KEY"),
                                 Path(args.scholar_cache), int(st.get("scholar_refresh_days", 20)))
+    if not args.from_raw and key and scholar and st.get("recover_from_scholar", True):
+        print("Looking up Scholar papers OpenAlex didn't list...")
+        try:
+            recover_missing_papers(OpenAlex(key), raw, scholar)
+        except Exception as e:
+            print(f"  ! recovery step failed: {e}", file=sys.stderr)
     data = build(cfg, raw, scholar)
     citing = raw.get("citing")
     if citing is None and key and not args.from_raw and st.get("citing_countries", True):
