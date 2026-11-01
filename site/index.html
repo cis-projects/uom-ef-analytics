@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab Scholar Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js" defer></script>
+  <script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <div>
+        <h1 id="lab-name">Lab dashboard</h1>
+        <p id="lab-desc" class="muted"></p>
+      </div>
+      <nav class="tabs" id="tabs">
+        <a href="#overview" data-tab="overview">Overview</a>
+        <a href="#member" data-tab="member">Members</a>
+        <a href="#network" data-tab="network">Network</a>
+        <a href="#venues" data-tab="venues">Venues</a>
+        <a href="#papers" data-tab="papers">Papers</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- ================= OVERVIEW ================= -->
+    <section id="tab-overview" class="tab">
+      <div class="kpis" id="lab-kpis"></div>
+      <div class="grid2">
+        <div class="card"><h3>Citations received per year</h3><p class="note">Each paper counted once, even when several members co-authored it.</p><div class="chart"><canvas id="c-lab-cby"></canvas></div></div>
+        <div class="card"><h3>Total citations over time</h3><p class="note">Running total at the end of each year.</p><div class="chart"><canvas id="c-lab-cum"></canvas></div></div>
+      </div>
+      <div class="card" id="history-card" hidden><h3>Monthly snapshots</h3><p class="note">Recorded every time the data refreshes, so this history becomes more detailed month by month.</p><div class="chart"><canvas id="c-history"></canvas></div></div>
+      <div class="card">
+        <div class="card-head"><h3>Members</h3><label class="check"><input type="checkbox" id="show-alumni"> Show alumni</label></div>
+        <div class="table-wrap"><table class="tbl" id="members-table"></table></div>
+      </div>
+    </section>
+
+    <!-- ================= MEMBER ================= -->
+    <section id="tab-member" class="tab" hidden>
+      <div class="filters">
+        <select id="member-select" aria-label="Member"></select>
+        <span id="member-links" class="links"></span>
+      </div>
+      <div class="kpis" id="member-kpis"></div>
+      <div class="grid2">
+        <div class="card watch" id="h-watch"></div>
+        <div class="card watch" id="i10-watch"></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Citations received per year</h3><div class="chart"><canvas id="c-m-cby"></canvas></div></div>
+        <div class="card"><h3>Total citations over time</h3><div class="chart"><canvas id="c-m-cum"></canvas></div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Papers published per year</h3><div class="chart"><canvas id="c-m-pubs"></canvas></div></div>
+        <div class="card"><h3>Top venues</h3><div id="m-venues"></div></div>
+      </div>
+      <div class="card"><h3>Collaborators in the lab</h3><div id="m-collab" class="chips"></div></div>
+      <div class="card"><h3>Papers</h3><div class="table-wrap"><table class="tbl" id="m-papers"></table></div></div>
+    </section>
+
+    <!-- ================= NETWORK ================= -->
+    <section id="tab-network" class="tab" hidden>
+      <div class="filters">
+        <label>Show outside collaborators with at least
+          <select id="net-min"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="5">5</option><option value="999">— lab only —</option></select>
+          joint papers</label>
+        <input id="net-search" type="search" placeholder="Find a person…" aria-label="Find a person">
+      </div>
+      <div class="net-layout">
+        <div class="card net-card">
+          <div class="timeline">
+            <button id="net-play" class="play" aria-label="Play the network growing year by year">▶ Play</button>
+            <input id="net-year" type="range" aria-label="Year" step="1">
+            <span id="net-year-label" class="yr-label"></span>
+          </div>
+          <div class="net-stage"><div id="network"></div><div id="net-year-big" class="yr-big"></div><div id="net-stats" class="net-stats"></div></div>
+          <div class="legend"><span><i class="dot lab"></i>Lab member</span><span><i class="dot alum"></i>Alumni</span><span><i class="dot ext"></i>Outside collaborator</span><span class="muted">Node size = papers · line width = joint papers</span></div>
+        </div>
+        <aside class="card" id="net-info"><p class="muted">Click a person to see their collaborations.</p></aside>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Collaborating institutions</h3><p class="note">Papers co-authored with someone from each institution.</p><div id="inst-bars"></div></div>
+        <div class="card"><h3>Top outside collaborators</h3><div class="table-wrap"><table class="tbl" id="ext-table"></table></div></div>
+      </div>
+    </section>
+
+    <!-- ================= VENUES ================= -->
+    <section id="tab-venues" class="tab" hidden>
+      <div class="kpis" id="venue-kpis"></div>
+      <div class="card"><div class="card-head"><h3>Where the lab publishes</h3>
+        <select id="venue-type" aria-label="Venue type"><option value="">All types</option></select></div>
+        <div class="table-wrap"><table class="tbl" id="venue-table"></table></div></div>
+    </section>
+
+    <!-- ================= PAPERS ================= -->
+    <section id="tab-papers" class="tab" hidden>
+      <div class="filters">
+        <input id="p-search" type="search" placeholder="Search titles, venues, authors…" aria-label="Search papers">
+        <select id="p-member" aria-label="Member"><option value="">All members</option></select>
+        <select id="p-year" aria-label="Year"><option value="">All years</option></select>
+        <span id="p-count" class="muted"></span>
+      </div>
+      <div class="card"><div class="table-wrap"><table class="tbl" id="papers-table"></table></div></div>
+    </section>
+  </main>
+
+  <footer class="wrap muted foot" id="foot"></footer>
+  <div id="tooltip" class="tooltip" hidden></div>
+</body>
+</html>

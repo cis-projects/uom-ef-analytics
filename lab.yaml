@@ -1,0 +1,41 @@
+# ---------------------------------------------------------------
+# Lab configuration — the only file you normally need to edit.
+# ---------------------------------------------------------------
+
+lab:
+  name: "CIS EF Team"
+  institution: "University of Melbourne"   # used to auto-match members given by name only
+  description: "Publications, citations and collaborations of the lab, updated monthly from OpenAlex."
+
+settings:
+  # OpenAlex work types to leave out of every count
+  exclude_types: [paratext, erratum, retraction, peer-review, editorial, letter, supplementary-materials]
+  # Merge a preprint and its published version (same title) into one paper, like Google Scholar does
+  merge_duplicate_titles: true
+  # Papers with more authors than this are left out of the collaboration network
+  # (huge consortium papers would otherwise connect everyone to everyone)
+  network_max_authors: 50
+
+# One entry per person. For each member give at least ONE of:
+#   openalex: their OpenAlex author ID(s), e.g. A5023888391  (most reliable; a list is fine
+#             when OpenAlex has split one person into several profiles)
+#   orcid:    their ORCID iD
+#   name only: matched by name + the lab institution above (check the result!)
+# Find IDs with:  python scripts/fetch.py --find "Jane Doe"
+members:
+  - name: Eduardo Oliveira
+    role: Education-Focused
+    orcid: 0000-0001-5063-8860
+    scholar: https://scholar.google.com/citations?user=WxcwAEIAAAAJ&hl=en
+    # openalex: [A5000000000]
+    # exclude_works: [W0000000000]     # papers OpenAlex wrongly attributed to this person
+  - name: Andrew Valentine
+    role: Education-Focused
+    orcid: 0000-0002-8640-4924
+    scholar: https://scholar.google.com/citations?user=oo8jF60AAAAJ&hl=en
+    # openalex: [A5000000001]
+  - name: Winn Chow
+    role: Education-Focused
+    orcid: 0000-0003-2022-1970
+    scholar: https://scholar.google.com/citations?user=zo2pj7cAAAAJ&hl=en
+    # active: false                    # alumni: kept in the data, shown as alumni
