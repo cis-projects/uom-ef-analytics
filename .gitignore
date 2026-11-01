@@ -1,0 +1,6 @@
+sample_raw.json
+sample_raw_lab.yaml
+raw*.json
+__pycache__/
+.venv/
+.DS_Store

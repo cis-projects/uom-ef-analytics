@@ -27,15 +27,79 @@ members:
     role: Education-Focused
     orcid: 0000-0001-5063-8860
     scholar: https://scholar.google.com/citations?user=WxcwAEIAAAAJ&hl=en
-    # openalex: [A5000000000]
-    # exclude_works: [W0000000000]     # papers OpenAlex wrongly attributed to this person
   - name: Andrew Valentine
     role: Education-Focused
     orcid: 0000-0002-8640-4924
     scholar: https://scholar.google.com/citations?user=oo8jF60AAAAJ&hl=en
-    # openalex: [A5000000001]
   - name: Winn Chow
     role: Education-Focused
     orcid: 0000-0003-2022-1970
     scholar: https://scholar.google.com/citations?user=zo2pj7cAAAAJ&hl=en
-    # active: false                    # alumni: kept in the data, shown as alumni
+  - name: Geela Chee
+    role: Education-Focused
+    orcid: 0000-0002-5574-3560
+    scholar: https://scholar.google.com/citations?user=p53m_jIAAAAJ&hl=en
+  - name: Antonette Mendoza
+    role: Education-Focused
+    orcid: 0000-0002-6903-1169
+    scholar: https://scholar.google.com/citations?user=Mi79FfQAAAAJ&hl=en
+  - name: Stella Peng
+    role: Education-Focused
+    orcid: 0000-0002-8176-3581
+    scholar: https://scholar.google.com/citations?user=s4NGl1EAAAAJ&hl=en
+  - name: Vi Truong
+    role: Education-Focused
+    orcid: 0000-0002-3894-3165
+    scholar: https://scholar.google.com/citations?user=rgJhCE4AAAAJ&hl=en
+  - name: Tanya Linden
+    role: Education-Focused
+    orcid: 0000-0003-0255-8123
+    scholar: https://scholar.google.com/citations?user=S4VbbVEAAAAJ&hl=en
+  - name: Rod Dilnutt
+    role: Education-Focused
+    orcid: 0000-0003-4617-3743
+    scholar: https://scholar.google.com/citations?user=na0g1r8AAAAJ&hl=en
+  - name: Zoey Ziyi
+    role: Education-Focused
+    orcid: 0000-0002-6419-0734
+    scholar: https://scholar.google.com/citations?user=nzQ2zqgAAAAJ&hl=en
+  - name: Arzoo Atiq
+    role: Education-Focused
+    orcid: 0000-0001-8701-5173
+    scholar: https://scholar.google.com/citations?user=MeTI9NYAAAAJ&hl=en
+  - name: Andrew Chester
+    role: Education-Focused
+    orcid: 0000-0003-1662-8663
+    scholar: https://scholar.google.com/citations?user=eRC3nwMAAAAJ&hl=en
+  - name: Hasti Samadi
+    role: Education-Focused
+    orcid: 0000-0002-3689-6668
+    scholar: https://scholar.google.com/citations?user=Vopds8IAAAAJ&hl=en
+  - name: Jean Lee
+    role: Education-Focused
+    orcid: 0000-0002-7457-028X
+    scholar: https://scholar.google.com/citations?user=bGj7c6UAAAAJ&hl=en
+  - name: Leila Esfahani
+    role: Education-Focused
+    orcid: 0000-0002-2163-3910
+    scholar: https://scholar.google.com/citations?user=jiSJZ4AAAAAJ&hl=en
+  - name: Leon Sterling
+    role: Education-Focused
+    orcid: 0000-0002-4122-2465
+    scholar: https://scholar.google.com/citations?user=N056eT4AAAAJ&hl=en
+  - name: Madeleine Antonellos
+    role: Education-Focused
+    orcid: 0000-0002-1100-5961
+    scholar: https://scholar.google.com/citations?user=mzlZXAMAAAAJ&hl=en
+  - name: Rajesh Sundaram
+    role: Education-Focused
+    orcid: 0000-0003-1388-1401
+    scholar: https://scholar.google.com/citations?user=uBPNL1gAAAAJ&hl=en
+  - name: Sophie Freeman
+    role: Education-Focused
+    orcid: 0000-0003-1003-6499
+    scholar: https://scholar.google.com/citations?user=lJCKz7IAAAAJ&hl=en
+  - name: Tawfiq Islam
+    role: Education-Focused
+    orcid: 0000-0003-4922-7807
+    scholar: https://scholar.google.com/citations?user=TVzqs2YAAAAJ&hl=en

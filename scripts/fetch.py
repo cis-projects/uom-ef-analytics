@@ -152,6 +152,74 @@ def fetch_raw(cfg: dict, api_key: str | None) -> dict:
             "members": members, "authors": authors, "works": list(works.values())}
 
 
+# ------------------------------------------------------------------ Google Scholar (via SerpApi)
+def scholar_id(url: str | None) -> str | None:
+    m = re.search(r"[?&]user=([\w-]+)", url or "")
+    return m.group(1) if m else None
+
+
+def fetch_scholar(members: list[dict], key: str | None, cache_path: Path, max_age_days: int) -> dict:
+    """Each member's Google Scholar profile (headline numbers, citations per year, every article
+    with its citation count). Cached so re-runs within `max_age_days` cost no SerpApi searches."""
+    cache = json.loads(cache_path.read_text()) if cache_path.exists() else {}
+    now = dt.datetime.now(dt.timezone.utc)
+    out, calls = {}, 0
+    for m in members:
+        sid = scholar_id(m.get("scholar"))
+        if not sid:
+            continue
+        cached = cache.get(sid)
+        if cached and (now - dt.datetime.fromisoformat(cached["fetched_at"])).days < max_age_days:
+            out[sid] = cached
+            continue
+        if not key:
+            if cached:
+                out[sid] = cached
+            continue
+        import requests
+        prof, arts, start = None, [], 0
+        try:
+            while True:
+                r = requests.get("https://serpapi.com/search.json", timeout=90, params={
+                    "engine": "google_scholar_author", "author_id": sid, "api_key": key,
+                    "hl": "en", "num": 100, "start": start})
+                calls += 1
+                r.raise_for_status()
+                j = r.json()
+                if j.get("error"):
+                    raise RuntimeError(j["error"])
+                if prof is None:
+                    prof = {"name": (j.get("author") or {}).get("name"), "cited_by": j.get("cited_by") or {}}
+                page = j.get("articles") or []
+                for a in page:
+                    y = str(a.get("year") or "")
+                    arts.append({"title": a.get("title"), "link": a.get("link"), "authors": a.get("authors"),
+                                 "publication": a.get("publication"), "year": int(y) if y.isdigit() else None,
+                                 "cites": (a.get("cited_by") or {}).get("value") or 0})
+                if len(page) < 100 or start >= 900 or not (j.get("serpapi_pagination") or {}).get("next"):
+                    break
+                start += 100
+        except Exception as e:  # keep last month's numbers rather than failing the whole run
+            print(f"  ! Google Scholar fetch failed for {m['name']}: {e}", file=sys.stderr)
+            if cached:
+                out[sid] = cached
+            continue
+        out[sid] = {"fetched_at": now.isoformat(timespec="seconds"), **prof, "articles": arts}
+        print(f"  {m['name']}: {len(arts)} Google Scholar articles")
+    cache.update(out)
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    cache_path.write_text(json.dumps(cache, indent=1, ensure_ascii=False))
+    print(f"Google Scholar: {len(out)} profile(s), {calls} SerpApi search(es) used")
+    return out
+
+
+def scholar_metric(prof: dict, name: str):
+    for row in (prof.get("cited_by") or {}).get("table") or []:
+        if name in row:
+            return row[name].get("all")
+    return None
+
+
 # ------------------------------------------------------------------ metrics
 def h_index(cites: list[int]) -> int:
     c = sorted(cites, reverse=True)
@@ -170,7 +238,8 @@ def h_watch(papers: list[dict], this_year: int) -> dict:
     for p in below[: max(target - have, 0)]:
         need = target - p["cited_by_count"]
         rate = annual_rate(p, this_year)
-        picks.append({"id": p["id"], "need": need,
+        picks.append({"id": p["id"], "need": need, "title": p["title"], "year": p.get("year"),
+                      "c": p["cited_by_count"], "link": p.get("link") or p.get("doi"),
                       "rate": round(rate, 1),
                       "eta_months": round(12 * need / rate) if rate > 0 else None})
     return {"h": h, "target": target, "papers_needed": max(target - have, 0),
@@ -188,7 +257,8 @@ def annual_rate(p: dict, this_year: int) -> float:
 
 def i10_watch(papers: list[dict]) -> list[dict]:
     near = [p for p in papers if 7 <= p["cited_by_count"] < 10]
-    return [{"id": p["id"], "need": 10 - p["cited_by_count"]}
+    return [{"id": p["id"], "need": 10 - p["cited_by_count"], "title": p["title"], "year": p.get("year"),
+             "c": p["cited_by_count"], "link": p.get("link") or p.get("doi")}
             for p in sorted(near, key=lambda p: -p["cited_by_count"])]
 
 
@@ -210,7 +280,48 @@ def cumulative(total: int, by_year: dict[str, int], years: list[int]) -> dict[st
 
 
 # ------------------------------------------------------------------ build
-def build(cfg: dict, raw: dict) -> dict:
+def apply_scholar(om: dict, prof: dict, oa_works: list[dict], this_year: int) -> None:
+    """Replace a member's headline numbers with their Google Scholar profile's."""
+    arts = [a for a in prof["articles"] if a.get("title")]
+    oa_by_title = {norm_title(w["title"]): w for w in oa_works}
+    papers = []
+    for i, a in enumerate(arts):
+        oa = oa_by_title.get(norm_title(a["title"]))
+        cby = {}
+        if oa and oa["cby"]:  # borrow OpenAlex's yearly pattern (scaled) to estimate citation pace
+            f = a["cites"] / oa["cited_by_count"] if oa["cited_by_count"] else 1
+            cby = {y: n * f for y, n in oa["cby"].items()}
+        papers.append({"id": f"S{i}", "title": a["title"], "year": a["year"], "cited_by_count": a["cites"],
+                       "venue": a.get("publication"), "link": a.get("link"), "authors": a.get("authors"),
+                       "cby": cby})
+    cites = [p["cited_by_count"] for p in papers]
+    graph = {str(g["year"]): g["citations"] for g in (prof.get("cited_by") or {}).get("graph") or []
+             if g.get("year")}
+    total = scholar_metric(prof, "citations") or sum(cites)
+    last, prev = graph.get(str(this_year - 1), 0), graph.get(str(this_year - 2), 0)
+    years = sorted({int(y) for y in graph} | {this_year})
+    years = list(range(max(min(years), this_year - 14), this_year + 1))
+    om.update({
+        "source": "Google Scholar", "scholar_name": prof.get("name"), "scholar_fetched": prof.get("fetched_at"),
+        "works": len(papers), "citations": total,
+        "h": scholar_metric(prof, "h_index") or h_index(cites),
+        "i10": scholar_metric(prof, "i10_index") or sum(1 for c in cites if c >= 10),
+        "cites_last_year": last, "growth": round((last - prev) / prev * 100) if prev else None,
+        "cites_by_year": graph, "years": years,
+        "cumulative": cumulative(total, graph, years),
+        "pubs_by_year": dict(sorted(Counter(str(p["year"]) for p in papers if p["year"]).items())),
+        "h_watch": h_watch(papers, this_year),
+        "i10_watch": i10_watch(papers),
+        "first_year": min((p["year"] for p in papers if p["year"]), default=None),
+        "scholar_papers": [{"title": p["title"], "year": p["year"], "c": p["cited_by_count"],
+                            "venue": p["venue"], "link": p["link"], "authors": p["authors"]}
+                           for p in sorted(papers, key=lambda p: -p["cited_by_count"])],
+    })
+
+
+
+def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
+    scholar = scholar or {}
     st = cfg.get("settings", {})
     excl_types = set(st.get("exclude_types", []))
     max_auth = int(st.get("network_max_authors", 25))
@@ -332,13 +443,32 @@ def build(cfg: dict, raw: dict) -> dict:
             "collab_lab": dict(coauth_lab.most_common()),
             "collab_external": len(coauth_ext),
             "first_year": min((w["year"] for w in mine if w["year"]), default=None),
+            "source": "OpenAlex", "years": chart_years,
         })
+        om = out_members[-1]
+        om["openalex_counts"] = {"works": om["works"], "citations": om["citations"], "h": om["h"]}
+        prof = scholar.get(scholar_id(m.get("scholar")) or "")
+        if prof and prof.get("articles") is not None:
+            apply_scholar(om, prof, mine, this_year)
 
     # --- lab level (each paper counted once)
     lab_works = list(works.values())
     lab_cites = [w["cited_by_count"] for w in lab_works]
     lab_cby = per_year(lab_works)
     lab_total = sum(lab_cites)
+    lab_source, lab_n = "OpenAlex", len(lab_works)
+    lab_years = chart_years
+    if out_members and all(om["source"] == "Google Scholar" for om in out_members):
+        best: dict[str, int] = {}
+        for om in out_members:
+            for p in om["scholar_papers"]:
+                k = norm_title(p["title"]) or p["title"]
+                best[k] = max(best.get(k, 0), p["c"])
+        lab_cites = list(best.values())
+        lab_total, lab_n, lab_source = sum(lab_cites), len(best), "Google Scholar"
+        lab_cby = dict(sorted(sum((Counter(om["cites_by_year"]) for om in out_members), Counter()).items()))
+        lab_years = sorted({int(y) for y in lab_cby} | {this_year})
+        lab_years = [y for y in lab_years if y >= this_year - 14]
     venues = Counter((w["venue"], w["venue_type"]) for w in lab_works if w["venue"])
 
     # --- collaboration network (lab members + everyone they co-authored with)
@@ -388,10 +518,12 @@ def build(cfg: dict, raw: dict) -> dict:
         "source": "OpenAlex",
         "lab": cfg.get("lab", {}),
         "years": chart_years,
+        "network_max_authors": max_auth,
         "summary": {
-            "members": len(out_members), "works": len(lab_works), "citations": lab_total,
+            "members": len(out_members), "works": lab_n, "citations": lab_total,
             "h": h_index(lab_cites), "i10": sum(1 for c in lab_cites if c >= 10),
-            "cites_by_year": lab_cby, "cumulative": cumulative(lab_total, lab_cby, chart_years),
+            "cites_by_year": lab_cby, "cumulative": cumulative(lab_total, lab_cby, lab_years),
+            "source": lab_source, "years": lab_years,
             "pubs_by_year": dict(sorted(Counter(str(w["year"]) for w in lab_works if w["year"]).items())),
             "venues": [{"name": n, "type": t, "count": c} for (n, t), c in venues.most_common(25)],
             "venue_types": dict(Counter(w["venue_type"] for w in lab_works)),
@@ -431,6 +563,8 @@ def main():
     ap.add_argument("--find", metavar="NAME", help="search OpenAlex for a person and print candidate IDs")
     ap.add_argument("--from-raw", metavar="FILE", help="build from a saved raw dump instead of fetching")
     ap.add_argument("--save-raw", metavar="FILE", help="also save the raw OpenAlex dump")
+    ap.add_argument("--scholar-cache", default=str(ROOT / "data" / "scholar_cache.json"),
+                    help="where Google Scholar profiles are cached between runs")
     args = ap.parse_args()
 
     key = os.environ.get("OPENALEX_API_KEY")
@@ -453,14 +587,20 @@ def main():
         if args.save_raw:
             Path(args.save_raw).write_text(json.dumps(raw))
 
-    data = build(cfg, raw)
+    st = cfg.get("settings", {})
+    scholar = raw.get("scholar")
+    if scholar is None:
+        print("Google Scholar profiles...")
+        scholar = fetch_scholar(raw["members"], os.environ.get("SERPAPI_KEY"),
+                                Path(args.scholar_cache), int(st.get("scholar_refresh_days", 20)))
+    data = build(cfg, raw, scholar)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / "data.json").write_text(json.dumps(data, separators=(",", ":")))
     hist = update_history(data, out / "history.json")
     s = data["summary"]
     print(f"Wrote {out/'data.json'}: {s['members']} members, {s['works']} papers, "
-          f"{s['citations']} citations, lab h-index {s['h']}; {len(hist)} monthly snapshot(s)")
+          f"{s['citations']} citations, lab h-index {s['h']} [{s['source']}]; {len(hist)} monthly snapshot(s)")
 
 
 if __name__ == "__main__":

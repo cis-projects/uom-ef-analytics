@@ -30,9 +30,12 @@
     document.title = lab.name ? `${lab.name} · Publications` : document.title;
     $("#lab-name").textContent = lab.name || "Lab dashboard";
     $("#lab-desc").textContent = lab.description || "";
-    $("#foot").innerHTML = `Data from <a href="https://openalex.org">OpenAlex</a>, updated ${esc(D.generated_at.slice(0, 10))}. ` +
-      `Citation counts are usually somewhat lower than Google Scholar's, which also counts preprints, theses and some duplicates. ` +
-      `Per-year citations cover roughly the last ten years.`;
+    const gs = D.members.some((m) => m.source === "Google Scholar");
+    $("#foot").innerHTML = gs
+      ? `Citation numbers from each member's Google Scholar profile; venues and the collaboration network from <a href="https://openalex.org">OpenAlex</a>. Updated ${esc(D.generated_at.slice(0, 10))}.`
+      : `Data from <a href="https://openalex.org">OpenAlex</a>, updated ${esc(D.generated_at.slice(0, 10))}. ` +
+        `Citation counts are usually somewhat lower than Google Scholar's, which also counts preprints, theses and some duplicates. ` +
+        `Per-year citations cover roughly the last ten years.`;
     window.addEventListener("hashchange", route);
     route();
   }
@@ -45,7 +48,7 @@
     document.querySelectorAll("#tabs a").forEach((a) => a.classList.toggle("on", a.dataset.tab === t));
     if (t === "overview" && !rendered.overview) renderOverview();
     if (t === "member") renderMember(arg ? decodeURIComponent(arg) : null);
-    if (t === "network" && !rendered.network) renderNetwork();
+    if (t === "network") renderNetwork(arg ? decodeURIComponent(arg) : null);
     if (t === "venues" && !rendered.venues) renderVenues();
     if (t === "papers" && !rendered.papers) renderPapers();
     rendered[t] = true;
@@ -136,12 +139,16 @@
     const growth = prev ? Math.round(((last - prev) / prev) * 100) : null;
     kpis($("#lab-kpis"), [
       [fmt(s.works), "Papers", `${fmt(D.members.length)} members`],
-      [fmt(s.citations), "Citations", "each paper counted once"],
+      [fmt(s.citations), "Citations", `<span id="lab-cit-sub">each paper counted once</span>`],
       [fmt(s.h), "Lab h-index", `i10-index ${fmt(s.i10)}`],
       [fmt(last), `Citations in ${LAST_YEAR}`, growth == null ? "" : `<span class="${growth >= 0 ? "pos" : ""}">${growth >= 0 ? "+" : ""}${growth}%</span> vs ${LAST_YEAR - 1}`],
       [fmt(s.external_collaborators), "Outside collaborators", `from ${fmt(Object.keys(s.countries).length)} countries`],
     ]);
-    const yrs = D.years;
+    const yrs = s.years || D.years;
+    if (s.source === "Google Scholar") {
+      $("#lab-cby-note").textContent = "Sum of members' Google Scholar profiles, so a paper shared by two members counts for both.";
+      $("#lab-cit-sub").textContent = "Google Scholar, shared papers once";
+    }
     chart("c-lab-cby", "bar", yearLabels(yrs), fillYears(s.cites_by_year, yrs), { unit: "citations" });
     chart("c-lab-cum", "line", yearLabels(yrs), fillYears(s.cumulative, yrs), { unit: "citations in total" });
     if (H.length >= 2) {
@@ -180,9 +187,11 @@
     m.openalex.forEach((id) => links.push(`<a href="https://openalex.org/authors/${esc(id)}" target="_blank" rel="noopener">OpenAlex ↗</a>`));
     $("#member-links").innerHTML = `<span class="muted">${esc(m.role || "")}</span>` + links.join("");
 
+    const oa = m.openalex_counts || {};
+    const srcNote = m.source === "Google Scholar" ? `Google Scholar · OpenAlex finds ${fmt(oa.citations)}` : "OpenAlex";
     kpis($("#member-kpis"), [
       [fmt(m.works), "Papers", m.first_year ? `since ${m.first_year}` : ""],
-      [fmt(m.citations), "Citations", ""],
+      [fmt(m.citations), "Citations", srcNote],
       [fmt(m.h), "h-index", ""],
       [fmt(m.i10), "i10-index", ""],
       [fmt(m.cites_last_year), `Citations in ${LAST_YEAR}`, m.growth == null ? "" : `<span class="${m.growth >= 0 ? "pos" : ""}">${m.growth >= 0 ? "+" : ""}${m.growth}%</span> vs ${LAST_YEAR - 1}`],
@@ -194,19 +203,19 @@
     $("#h-watch").innerHTML = !m.works ? `<h3>Next h-index</h3><p class="empty">No papers found yet.</p>` : `
       <h3>Next h-index: ${hw.h} → ${hw.target}</h3>
       <p class="big">${hw.papers_needed} paper${hw.papers_needed === 1 ? "" : "s"} need${hw.papers_needed === 1 ? "s" : ""} to reach ${hw.target} citations: <b>${hw.citations_needed}</b> more citation${hw.citations_needed === 1 ? "" : "s"} in total.</p>
-      <ol>${hw.papers.map((p) => { const w = byId[p.id]; return `<li>
-        <div><div class="t">${esc(w.title)}</div><div class="meta">${w.year || ""} · ${fmt(w.cited_by_count)} of ${hw.target} · ${pace(p)}</div>
-        <div class="meter"><span style="width:${(100 * w.cited_by_count) / hw.target}%"></span></div></div>
-        <div class="need">+${p.need}</div></li>`; }).join("")}</ol>`;
+      <ol>${hw.papers.map((p) => `<li>
+        <div><div class="t">${paperLink(p)}</div><div class="meta">${p.year || ""} · ${fmt(p.c)} of ${hw.target} · ${pace(p)}</div>
+        <div class="meter"><span style="width:${(100 * p.c) / hw.target}%"></span></div></div>
+        <div class="need">+${p.need}</div></li>`).join("")}</ol>`;
     const iw = m.i10_watch;
     $("#i10-watch").innerHTML = `<h3>Close to 10 citations</h3>
       <p class="big">${iw.length ? `${iw.length} paper${iw.length === 1 ? "" : "s"} would raise the i10-index from ${m.i10}.` : "No papers sitting at 7–9 citations right now."}</p>
-      <ol>${iw.slice(0, 6).map((p) => { const w = byId[p.id]; return `<li>
-        <div><div class="t">${esc(w.title)}</div><div class="meta">${w.year || ""} · ${fmt(w.cited_by_count)} of 10</div>
-        <div class="meter"><span style="width:${w.cited_by_count * 10}%"></span></div></div>
-        <div class="need">+${p.need}</div></li>`; }).join("")}</ol>`;
+      <ol>${iw.slice(0, 6).map((p) => `<li>
+        <div><div class="t">${paperLink(p)}</div><div class="meta">${p.year || ""} · ${fmt(p.c)} of 10</div>
+        <div class="meter"><span style="width:${p.c * 10}%"></span></div></div>
+        <div class="need">+${p.need}</div></li>`).join("")}</ol>`;
 
-    const yrs = D.years;
+    const yrs = m.years || D.years;
     chart("c-m-cby", "bar", yearLabels(yrs), fillYears(m.cites_by_year, yrs), { unit: "citations" });
     chart("c-m-cum", "line", yearLabels(yrs), fillYears(m.cumulative, yrs), { unit: "citations in total" });
     const py = Object.keys(m.pubs_by_year).map(Number);
@@ -220,8 +229,22 @@
         `<span class="muted" style="font-size:13px;align-self:center">+ ${fmt(m.collab_external)} outside co-authors</span>`
       : `<p class="empty">No co-authored papers with other lab members yet. ${fmt(m.collab_external)} outside co-authors.</p>`;
 
-    const mine = D.works.filter((w) => w.lab.includes(m.slug));
-    table($("#m-papers"), paperCols(), mine, { sort: "cited_by_count", limit: 25 });
+    if (m.scholar_papers) {
+      table($("#m-papers"), [
+        { key: "title", label: "Title", cls: "title", html: (p) => `${paperLink(p)}<div class="sub">${esc(p.authors || "")}${p.venue ? ` · <i>${esc(p.venue)}</i>` : ""}</div>` },
+        { key: "year", label: "Year", num: true },
+        { key: "c", label: "Citations", num: true, html: (p) => fmt(p.c) },
+      ], m.scholar_papers, { sort: "c", limit: 25 });
+    } else {
+      const mine = D.works.filter((w) => w.lab.includes(m.slug));
+      table($("#m-papers"), paperCols(), mine, { sort: "cited_by_count", limit: 25 });
+    }
+    $("#m-net-link").href = `#network/${m.slug}`;
+  }
+
+  function paperLink(p) {
+    const u = p.link || p.doi;
+    return u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(p.title)}</a>` : esc(p.title);
   }
 
   function range(a, b) { const o = []; for (let i = a; i <= b; i++) o.push(i); return o; }
@@ -240,64 +263,112 @@
     return names.length > 6 ? `${names.slice(0, 5).join(", ")} … ${names[names.length - 1]} (${names.length} authors)` : names.join(", ");
   }
 
-  // ------------------------------------------------------------ network
-  // The graph can be replayed year by year: people appear when they first publish with the lab,
-  // circles grow with papers, and links thicken with each new joint paper.
-  let net, netData;
-  function renderNetwork() {
-    const s = D.summary;
-    hbars($("#inst-bars"), s.institutions, 12);
-    const N = D.network.nodes, E = D.network.edges;
-    const labNodes = new Set(N.filter((n) => n.lab).map((n) => n.id));
-    const nodeById = Object.fromEntries(N.map((n) => [n.id, n]));
-    const labLinks = {};
-    E.forEach((e) => {
-      if (labNodes.has(e.from) && !labNodes.has(e.to)) (labLinks[e.to] ||= new Set()).add(e.from);
-      if (labNodes.has(e.to) && !labNodes.has(e.from)) (labLinks[e.from] ||= new Set()).add(e.to);
-    });
-    const ext = N.filter((n) => !n.lab).map((n) => ({ ...n, nlab: labLinks[n.id]?.size || 0 }));
-    table($("#ext-table"), [
-      { key: "label", label: "Name", html: (n) => `${esc(n.label)}<div class="sub">${esc(n.inst || "")}</div>` },
-      { key: "papers", label: "Joint papers", num: true },
-      { key: "nlab", label: "Lab members", num: true },
-    ], ext, { sort: "papers", limit: 12 });
+  // ------------------------------------------------------------ network (one member at a time)
+  // The selected person sits in the centre; everyone they have published with sits around them.
+  // Circle size = papers with the selected person; line width = papers the two ends wrote together.
+  // Play replays it year by year from their first paper.
+  let net, netData, netTimer = null, netSlug = null;
+  const cumY = (y, upto) => { let t = 0; for (const k in y || {}) if (+k <= upto) t += y[k]; return t; };
 
+  function egoData(m) {
+    const MAXA = D.network_max_authors || 25;
+    const id2slug = {};
+    D.members.forEach((x) => (x.openalex || []).forEach((i) => (id2slug[i] = x.slug)));
+    const extInfo = Object.fromEntries(D.network.nodes.filter((n) => !n.lab).map((n) => [n.id, n]));
+    const works = D.works.filter((w) => w.lab.includes(m.slug));
+    const people = {}, pairs = {}, egoY = {}, instCount = {};
+    for (const w of works) {
+      const yr = String(w.year || THIS_YEAR);
+      egoY[yr] = (egoY[yr] || 0) + 1;
+      if (w.authors.length > MAXA) continue;  // consortium papers would connect everyone
+      const keys = new Set([m.slug]);
+      for (const a of w.authors) {
+        const k = id2slug[a.id] || a.id;
+        if (!k) continue;
+        keys.add(k);
+        if (k !== m.slug && !people[k]) {
+          const lab = !!members[k];
+          people[k] = { id: k, label: lab ? members[k].name : a.name, lab, active: lab ? members[k].active : true,
+            inst: lab ? (D.lab.institution || "Lab member") : extInfo[k]?.inst, y: {}, papers: 0, works: [] };
+        }
+      }
+      const insts = new Set([...keys].map((k) => people[k]).filter((p) => p && !p.lab && p.inst).map((p) => p.inst));
+      insts.forEach((i) => (instCount[i] = (instCount[i] || 0) + 1));
+      const ks = [...keys].sort();
+      ks.forEach((k) => { if (k !== m.slug) { const p = people[k]; p.y[yr] = (p.y[yr] || 0) + 1; p.papers++; p.works.push(w); } });
+      for (let i = 0; i < ks.length; i++) for (let j = i + 1; j < ks.length; j++) {
+        const id = `${ks[i]}|${ks[j]}`;
+        const e = (pairs[id] ||= { id, from: ks[i], to: ks[j], y: {}, w: 0 });
+        e.y[yr] = (e.y[yr] || 0) + 1; e.w++;
+      }
+    }
+    return { m, works, people, pairs, egoY, instCount };
+  }
+
+  function renderNetwork(slug) {
+    const sel = $("#net-member");
+    if (!sel.options.length) {
+      const sorted = D.members.slice().sort((a, b) => b.active - a.active || a.name.localeCompare(b.name));
+      sel.innerHTML = sorted.map((m) => `<option value="${m.slug}">${esc(m.name)}${m.active ? "" : " (alumni)"}</option>`).join("");
+      sel.onchange = () => (location.hash = `network/${sel.value}`);
+    }
+    const m = members[slug] || members[sel.value] || members[sel.options[0].value];
+    sel.value = m.slug;
+    if (netSlug === m.slug && net) return;
+    netSlug = m.slug;
     if (!window.vis) { $("#network").innerHTML = `<p class="empty" style="padding:16px">Network library failed to load.</p>`; return; }
 
-    // ---- time axis
-    const yearsSeen = N.flatMap((n) => Object.keys(n.y || {}).map(Number)).filter((y) => y > 1900);
-    const FIRST = yearsSeen.length ? Math.min(...yearsSeen) : THIS_YEAR;
+    const G = egoData(m);
+    const P = Object.values(G.people), E = Object.values(G.pairs);
+    const egoYears = Object.keys(G.egoY).map(Number).filter((y) => y > 1900);
+    const FIRST = egoYears.length ? Math.min(...egoYears) : THIS_YEAR;
+    const PMAX = Math.max(1, ...P.map((p) => p.papers)), EMAX = Math.max(1, ...E.map((e) => e.w));
+    $("#net-min").value = P.length > 60 ? "2" : "1";  // keep big networks readable by default
     const slider = $("#net-year"), playBtn = $("#net-play");
     slider.min = FIRST; slider.max = THIS_YEAR; slider.value = THIS_YEAR;
-    if (FIRST === THIS_YEAR) $(".timeline").hidden = true;
-    let year = THIS_YEAR, timer = null;
-    const cum = (y, upto) => { let t = 0; for (const k in y || {}) if (+k <= upto) t += y[k]; return t; };
-    // fixed scale across all years, so circles and lines visibly grow
-    const GMAX = Math.max(1, ...N.map((n) => n.papers)), EMAX = Math.max(1, ...E.map((e) => e.w));
+    $(".timeline").hidden = FIRST >= THIS_YEAR;
+    let year = THIS_YEAR;
+
+    // ---- side tables for this person
+    hbars($("#inst-bars"), Object.entries(G.instCount).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count), 12);
+    table($("#ext-table"), [
+      { key: "label", label: "Name", html: (p) => `${esc(p.label)} ${p.lab ? '<span class="tag">lab</span>' : ""}<div class="sub">${esc(p.lab ? "" : p.inst || "")}</div>` },
+      { key: "papers", label: "Joint papers", num: true },
+      { key: "since", label: "Since", num: true, val: (p) => Math.min(...Object.keys(p.y).map(Number)), html: (p) => Math.min(...Object.keys(p.y).map(Number)) },
+    ], P, { sort: "papers", limit: 15 });
 
     function snapshot(upto) {
       const min = Number($("#net-min").value), final = upto >= THIS_YEAR;
-      const accent = css("--accent"), alum = css("--alum"), extc = css("--ext"), text = css("--text"), surface = css("--surface"), line = css("--border");
-      const nodes = [];
-      for (const n of N) {
-        const p = final ? n.papers : cum(n.y, upto);
-        if (n.lab ? p < 1 && !final : p < min) continue;
+      const accent = css("--accent"), alum = css("--alum"), extc = css("--ext"), ego = css("--ego"),
+        text = css("--text"), surface = css("--surface"), line = css("--border");
+      const egoN = final ? G.works.length : cumY(G.egoY, upto);
+      const nodes = [{
+        id: m.slug, value: PMAX, label: m.name, x: 0, y: 0, fixed: { x: true, y: true },
+        title: `${m.name}\n${egoN} paper${egoN === 1 ? "" : "s"}${final ? "" : ` by ${upto}`}`,
+        color: { background: ego, border: surface, highlight: { background: ego, border: text }, hover: { background: ego, border: text } },
+        font: { color: text, size: 16, bold: true, strokeWidth: 4, strokeColor: surface }, borderWidth: 3,
+      }];
+      for (const p of P) {
+        const n = final ? p.papers : cumY(p.y, upto);
+        if (n < min || n < 1) continue;
+        const bg = p.lab ? (p.active ? accent : alum) : extc;
         nodes.push({
-          id: n.id, value: Math.max(p, 1),
-          label: n.lab || p >= Math.max(min, 5) ? n.label : "",
-          title: `${n.label}${n.inst ? ` — ${n.inst}` : ""}\n${p} paper${p === 1 ? "" : "s"}${n.lab ? "" : " with the lab"}${final ? "" : ` by ${upto}`}`,
-          color: { background: n.lab ? (n.active ? accent : alum) : extc, border: surface, highlight: { background: n.lab ? accent : extc, border: text }, hover: { background: n.lab ? accent : extc, border: text } },
-          font: { color: text, size: n.lab ? 14 : 11, strokeWidth: 3, strokeColor: surface }, borderWidth: 2,
+          id: p.id, value: n, label: p.lab || n >= Math.max(min, 2) || P.length <= 40 ? p.label : "",
+          title: `${p.label}${p.inst && !p.lab ? ` — ${p.inst}` : ""}\n${n} paper${n === 1 ? "" : "s"} with ${m.name}${final ? "" : ` by ${upto}`}`,
+          color: { background: bg, border: surface, highlight: { background: bg, border: text }, hover: { background: bg, border: text } },
+          font: { color: text, size: p.lab ? 14 : 12, strokeWidth: 3, strokeColor: surface }, borderWidth: 2,
         });
       }
       const ids = new Set(nodes.map((n) => n.id));
       const edges = [];
       for (const e of E) {
         if (!ids.has(e.from) || !ids.has(e.to)) continue;
-        const w = final ? e.w : cum(e.y, upto);
+        const w = final ? e.w : cumY(e.y, upto);
         if (w < 1) continue;
-        edges.push({ id: `${e.from}|${e.to}`, from: e.from, to: e.to, value: w,
-          title: `${w} joint paper${w === 1 ? "" : "s"}${final ? "" : ` by ${upto}`}`, color: { color: line, highlight: accent, hover: accent, opacity: 0.9 } });
+        const touchesEgo = e.from === m.slug || e.to === m.slug;
+        edges.push({ id: e.id, from: e.from, to: e.to, value: w,
+          title: `${w} paper${w === 1 ? "" : "s"} together${final ? "" : ` by ${upto}`}`,
+          color: { color: line, highlight: accent, hover: accent, opacity: touchesEgo ? 1 : 0.55 } });
       }
       return { nodes, edges };
     }
@@ -308,9 +379,10 @@
       const have = new Set(netData.nodes.getIds());
       const pos = net.getPositions([...have]);
       for (const n of snap.nodes) {               // newcomers start next to someone already on screen
-        if (have.has(n.id)) continue;
+        if (have.has(n.id) || n.id === m.slug) continue;
         const e = snap.edges.find((e) => (e.from === n.id && pos[e.to]) || (e.to === n.id && pos[e.from]));
-        if (e) { const o = pos[e.from === n.id ? e.to : e.from]; n.x = o.x + (Math.random() - 0.5) * 60; n.y = o.y + (Math.random() - 0.5) * 60; }
+        const o = e ? pos[e.from === n.id ? e.to : e.from] : { x: 0, y: 0 };
+        n.x = o.x + (Math.random() - 0.5) * 80; n.y = o.y + (Math.random() - 0.5) * 80;
       }
       const keepN = new Set(snap.nodes.map((n) => n.id)), keepE = new Set(snap.edges.map((e) => e.id));
       netData.edges.remove(netData.edges.getIds().filter((id) => !keepE.has(id)));
@@ -318,19 +390,20 @@
       netData.nodes.update(snap.nodes);
       netData.edges.update(snap.edges);
       net.startSimulation();
-      const people = snap.nodes.length, links = snap.edges.length;
-      $("#net-year-big").textContent = upto >= THIS_YEAR ? "" : upto;
-      $("#net-year-label").textContent = upto >= THIS_YEAR ? `${FIRST}–${THIS_YEAR}` : `${FIRST}–${upto}`;
-      $("#net-stats").textContent = upto >= THIS_YEAR ? "" : `${people} people · ${links} links`;
+      const final = upto >= THIS_YEAR;
+      $("#net-year-big").textContent = final ? "" : upto;
+      $("#net-year-label").textContent = `${FIRST}–${final ? THIS_YEAR : upto}`;
+      $("#net-stats").textContent = final ? "" : `${snap.nodes.length - 1} co-author${snap.nodes.length === 2 ? "" : "s"}`;
     }
 
-    function stop(label = "▶ Play") { clearInterval(timer); timer = null; playBtn.textContent = label; }
+    const stop = (label = "▶ Play") => { clearInterval(netTimer); netTimer = null; playBtn.textContent = label; };
+    stop();
     playBtn.onclick = () => {
-      if (timer) { stop(); return; }
+      if (netTimer) { stop(); return; }
       if (year >= THIS_YEAR) apply(FIRST);
       playBtn.textContent = "❚❚ Pause";
       setTimeout(() => net.fit({ animation: { duration: 600 } }), 300);
-      timer = setInterval(() => {
+      netTimer = setInterval(() => {
         if (year >= THIS_YEAR) { stop("↻ Replay"); net.fit({ animation: { duration: 900 } }); return; }
         apply(year + 1);
         net.fit({ animation: { duration: 1100, easingFunction: "easeInOutQuad" } });
@@ -339,37 +412,47 @@
     slider.oninput = () => { stop(); apply(Number(slider.value)); };
     $("#net-min").onchange = () => apply(year);
 
+    net?.destroy();
     netData = { nodes: new vis.DataSet(), edges: new vis.DataSet() };
     const init = snapshot(THIS_YEAR);
     netData.nodes.add(init.nodes); netData.edges.add(init.edges);
     net = new vis.Network($("#network"), netData, {
-      nodes: { shape: "dot", scaling: { min: 6, max: 36, customScalingFunction: (a, b, t, v) => Math.sqrt(v / GMAX) } },
-      edges: { scaling: { min: 1, max: 8, customScalingFunction: (a, b, t, v) => Math.sqrt(v / EMAX) }, smooth: false },
-      physics: { solver: "forceAtlas2Based", forceAtlas2Based: { gravitationalConstant: -60, springLength: 90, damping: 0.5 },
+      nodes: { shape: "dot", scaling: { min: 7, max: 38, customScalingFunction: (a, b, t, v) => Math.sqrt(v / PMAX) } },
+      edges: { scaling: { min: 1, max: 9, customScalingFunction: (a, b, t, v) => Math.sqrt(v / EMAX) }, smooth: false },
+      physics: { solver: "forceAtlas2Based", forceAtlas2Based: { gravitationalConstant: -70, springLength: 110, damping: 0.5 },
         maxVelocity: 25, minVelocity: 0.6, stabilization: { iterations: 300 } },
       interaction: { hover: true, tooltipDelay: 120 },
     });
     apply(THIS_YEAR);
     net.on("click", (p) => showNode(p.nodes[0]));
+    showNode(null);
 
     function showNode(id) {
-      const n = nodeById[id];
-      if (!n) { $("#net-info").innerHTML = `<p class="muted">Click a person to see their collaborations.</p>`; return; }
-      const links = E.filter((e) => e.from === id || e.to === id)
-        .map((e) => ({ other: nodeById[e.from === id ? e.to : e.from], w: e.w })).sort((a, b) => b.w - a.w);
-      const labL = links.filter((l) => l.other.lab), extL = links.filter((l) => !l.other.lab);
-      const since = Math.min(...Object.keys(n.y || {}).map(Number));
-      $("#net-info").innerHTML = `<h3>${esc(n.label)}</h3>
-        <p class="muted" style="margin:0 0 8px;font-size:13px">${n.lab ? esc(n.role || "Lab member") + (n.active ? "" : " · alumni") : esc(n.inst || "Outside collaborator")} · ${n.papers} paper${n.papers === 1 ? "" : "s"}${n.lab ? "" : " with the lab"}${isFinite(since) ? ` · since ${since}` : ""}</p>
-        ${n.lab ? `<p style="margin:0 0 8px"><a href="#member/${n.id}">Open member page →</a></p>` : ""}
-        ${labL.length ? `<b style="font-size:13px">With lab members</b><ul>${labL.map((l) => `<li>${esc(l.other.label)} — ${l.w}</li>`).join("")}</ul>` : ""}
-        ${n.lab && extL.length ? `<b style="font-size:13px">Top outside co-authors</b><ul>${extL.slice(0, 8).map((l) => `<li>${esc(l.other.label)} — ${l.w}<br><span class="muted">${esc(l.other.inst || "")}</span></li>`).join("")}</ul>` : ""}`;
+      const p = G.people[id];
+      if (!p) {
+        const top = P.slice().sort((a, b) => b.papers - a.papers).slice(0, 10);
+        $("#net-info").innerHTML = `<h3>${esc(m.name)}</h3>
+          <p class="muted" style="margin:0 0 8px;font-size:13px">${fmt(P.length)} co-author${P.length === 1 ? "" : "s"} across ${fmt(G.works.length)} papers${FIRST < THIS_YEAR ? ` since ${FIRST}` : ""}</p>
+          <p style="margin:0 0 8px"><a href="#member/${m.slug}">Open member page →</a></p>
+          ${top.length ? `<b style="font-size:13px">Most frequent co-authors</b><ul>${top.map((q) => `<li>${esc(q.label)} — ${q.papers}${q.lab ? "" : `<br><span class="muted">${esc(q.inst || "")}</span>`}</li>`).join("")}</ul>` : ""}
+          <p class="muted" style="font-size:12px">Click anyone to see the papers you share.</p>`;
+        return;
+      }
+      const ws = p.works.slice().sort((a, b) => (b.year || 0) - (a.year || 0));
+      $("#net-info").innerHTML = `<h3>${esc(p.label)}</h3>
+        <p class="muted" style="margin:0 0 8px;font-size:13px">${p.lab ? "Lab member" : esc(p.inst || "Outside collaborator")} · ${p.papers} paper${p.papers === 1 ? "" : "s"} with ${esc(m.name)}</p>
+        ${p.lab ? `<p style="margin:0 0 8px"><a href="#network/${p.id}">Centre the network on ${esc(p.label)} →</a></p>` : ""}
+        <ul>${ws.slice(0, 12).map((w) => `<li>${paperLink(w)} <span class="muted">(${w.year || "n.d."})</span></li>`).join("")}</ul>
+        ${ws.length > 12 ? `<p class="muted" style="font-size:12px">+ ${ws.length - 12} more</p>` : ""}
+        <p style="font-size:12px"><a href="#" id="net-back">← Back to ${esc(m.name)}</a></p>`;
+      $("#net-back").onclick = (e) => { e.preventDefault(); net.unselectAll(); showNode(null); };
     }
+    $("#net-search").value = "";
     $("#net-search").onchange = $("#net-search").onkeydown = (e) => {
       if (e.type === "keydown" && e.key !== "Enter") return;
       const q = e.target.value.trim().toLowerCase();
       if (!q) return;
-      const hit = N.find((n) => n.label.toLowerCase().includes(q));
+      const hit = P.find((n) => n.label.toLowerCase().includes(q));
       if (!hit) return;
       if (!netData.nodes.get(hit.id)) { stop(); $("#net-min").value = "1"; apply(THIS_YEAR); }
       net.selectNodes([hit.id]); net.focus(hit.id, { scale: 1.3, animation: true }); showNode(hit.id);

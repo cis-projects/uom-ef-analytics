@@ -12,10 +12,11 @@ A static website showing your lab's publications, citations and collaborations, 
   - *Next h-index*: exactly which papers need how many more citations to lift the h-index by one,
     with an estimate of how long each will take at its current citation pace.
   - *Close to 10 citations*: papers that would raise the i10-index.
-- **Network** – interactive co-authorship graph of lab members and everyone they publish with.
-  Press **Play** to watch it grow year by year from the lab's first paper: people appear when they
-  first publish with the lab, circles grow with papers and links thicken with each joint paper.
-  The slider jumps to any year. Also lists top collaborating institutions and outside collaborators.
+- **Network** – one member at a time: the selected person in the centre, everyone they have
+  published with around them. Circle size = papers with that person; line width = papers the two
+  ends wrote together (including between co-authors). Press **Play** to watch it grow year by year
+  from their first paper; click anyone to see the papers you share. Also lists their collaborating
+  institutions and co-authors.
 - **Venues** – every journal and conference the lab publishes in, with citations per paper.
 - **Papers** – searchable, filterable list of all lab papers.
 
@@ -79,6 +80,25 @@ whenever you press **Actions → Update dashboard → Run workflow**. When it fi
 is live at `https://<your-username>.github.io/<repo-name>/`.
 
 ---
+
+## Exact Google Scholar numbers (recommended)
+
+OpenAlex sees fewer citations than Google Scholar, especially in fields where many citing
+documents are theses, reports or proceedings. To show each member's numbers exactly as on their
+Scholar profile, the site can read the profiles through [SerpApi](https://serpapi.com):
+
+1. Create a free SerpApi account (100 searches/month) and copy your API key.
+2. Add it as a repository secret named `SERPAPI_KEY` (same place as `OPENALEX_API_KEY`).
+3. Make sure every member in `lab.yaml` has a `scholar:` link.
+
+Each member costs one search per refresh (one more per 100 papers), and profiles are re-read at
+most every `scholar_refresh_days` (default 20), so a small lab uses a handful of searches a month.
+The cached profiles are kept in `data/scholar_cache.json`.
+
+With the key set, citations, h-index, i10-index, citations per year, papers and the h-index/i10
+watch lists come from Google Scholar. Venues, the Papers tab and the collaboration network still
+come from OpenAlex, because Scholar doesn't provide co-author IDs or venue types. Each member page
+shows both totals ("OpenAlex finds …") so you can spot records that need fixing.
 
 ## How the numbers work
 
