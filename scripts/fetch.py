@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import difflib
 import json
 import os
 import re
@@ -152,6 +153,30 @@ def fetch_raw(cfg: dict, api_key: str | None) -> dict:
             "members": members, "authors": authors, "works": list(works.values())}
 
 
+def fetch_citing_countries(oa: OpenAlex, work_ids: list[str]) -> dict:
+    """Where the lab is cited from: countries of the authors of every paper citing lab papers,
+    per year of the citing paper. Uses OpenAlex group_by, so ~1 call per 100 lab papers per year."""
+    by_year: dict[str, Counter] = defaultdict(Counter)
+    papers_by_year: Counter = Counter()
+    ids = sorted(set(work_ids))
+    for i in range(0, len(ids), 100):
+        flt = "cites:" + "|".join(ids[i:i + 100])
+        res = oa.get("/works", filter=flt, group_by="publication_year") or {}
+        for g in res.get("group_by", []):
+            y = str(g.get("key"))
+            if not y.isdigit():
+                continue
+            papers_by_year[y] += g.get("count", 0)
+            r = oa.get("/works", filter=f"{flt},publication_year:{y}", group_by="authorships.countries") or {}
+            for c in r.get("group_by", []):
+                cc = short(str(c.get("key") or ""))
+                if cc and len(cc) == 2 and cc.isalpha():
+                    by_year[y][cc.upper()] += c.get("count", 0)
+    print(f"Citing countries: {len({c for v in by_year.values() for c in v})} countries, "
+          f"~{sum(papers_by_year.values())} citing papers")
+    return {"by_year": {y: dict(c) for y, c in sorted(by_year.items())}, "papers_by_year": dict(sorted(papers_by_year.items()))}
+
+
 # ------------------------------------------------------------------ Google Scholar (via SerpApi)
 def scholar_id(url: str | None) -> str | None:
     m = re.search(r"[?&]user=([\w-]+)", url or "")
@@ -280,6 +305,26 @@ def cumulative(total: int, by_year: dict[str, int], years: list[int]) -> dict[st
 
 
 # ------------------------------------------------------------------ build
+def scholar_matches(works: list[dict], gs_titles: list[str]) -> set[str]:
+    """IDs of OpenAlex works that also appear on the member's Google Scholar profile (by title)."""
+    gs = [norm_title(t) for t in gs_titles if t]
+    gss = set(gs)
+    hit = set()
+    for w in works:
+        t = norm_title(w["title"])
+        if not t:
+            continue
+        if t in gss or any(len(g) >= 30 and (t.startswith(g) or g.startswith(t)) for g in gs):
+            hit.add(w["id"])
+            continue
+        for g in gs:
+            sm = difflib.SequenceMatcher(None, t, g)
+            if sm.real_quick_ratio() >= 0.9 and sm.quick_ratio() >= 0.9 and sm.ratio() >= 0.9:
+                hit.add(w["id"])
+                break
+    return hit
+
+
 def apply_scholar(om: dict, prof: dict, oa_works: list[dict], this_year: int) -> None:
     """Replace a member's headline numbers with their Google Scholar profile's."""
     arts = [a for a in prof["articles"] if a.get("title")]
@@ -400,6 +445,24 @@ def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
         w["lab"] = [s for s in w["lab"] if w["id"] not in excl[s]]
     works = {k: w for k, w in works.items() if w["lab"]}
 
+    # When a member has a Google Scholar profile, trust it for WHICH papers are theirs: OpenAlex
+    # sometimes merges namesakes into one author record, which would put strangers in the network.
+    dropped: dict[str, int] = {}
+    if st.get("scholar_filters_openalex", True):
+        for m in members:
+            prof = scholar.get(scholar_id(m.get("scholar")) or "")
+            if not prof or not prof.get("articles"):
+                continue
+            mine = [w for w in works.values() if m["slug"] in w["lab"]]
+            keep = scholar_matches(mine, [a.get("title") for a in prof["articles"]])
+            dropped[m["slug"]] = len(mine) - len(keep)
+            for w in mine:
+                if w["id"] not in keep:
+                    w["lab"] = [s for s in w["lab"] if s != m["slug"]]
+            if dropped[m["slug"]]:
+                print(f"  {m['name']}: {dropped[m['slug']]} OpenAlex paper(s) not on their Scholar profile left out")
+        works = {k: w for k, w in works.items() if w["lab"]}
+
     all_years = sorted({int(y) for w in works.values() for y in w["cby"]} |
                        {w["year"] for w in works.values() if w["year"]})
     chart_years = [y for y in all_years if y >= this_year - 10] or [this_year]
@@ -446,7 +509,8 @@ def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
             "source": "OpenAlex", "years": chart_years,
         })
         om = out_members[-1]
-        om["openalex_counts"] = {"works": om["works"], "citations": om["citations"], "h": om["h"]}
+        om["openalex_counts"] = {"works": om["works"], "citations": om["citations"], "h": om["h"],
+                                 "dropped": dropped.get(m["slug"], 0)}
         prof = scholar.get(scholar_id(m.get("scholar")) or "")
         if prof and prof.get("articles") is not None:
             apply_scholar(om, prof, mine, this_year)
@@ -594,6 +658,15 @@ def main():
         scholar = fetch_scholar(raw["members"], os.environ.get("SERPAPI_KEY"),
                                 Path(args.scholar_cache), int(st.get("scholar_refresh_days", 20)))
     data = build(cfg, raw, scholar)
+    citing = raw.get("citing")
+    if citing is None and key and not args.from_raw and st.get("citing_countries", True):
+        print("Where the lab is cited from...")
+        try:
+            citing = fetch_citing_countries(OpenAlex(key), [w["id"] for w in data["works"]])
+        except Exception as e:  # never lose the whole run over the map
+            print(f"  ! citing-countries lookup failed: {e}", file=sys.stderr)
+    if citing:
+        data["citing"] = citing
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / "data.json").write_text(json.dumps(data, separators=(",", ":")))

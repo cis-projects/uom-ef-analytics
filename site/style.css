@@ -143,3 +143,64 @@ input[type=search] { min-width: 240px; flex: 1 1 240px; max-width: 420px; }
 
 .dot.ego { background: var(--ego); }
 #net-member { font-weight: 600; }
+
+/* ego network (D3) */
+.net-stage { overscroll-behavior-x: contain; }
+.ego-svg { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; user-select: none; }
+.ego-svg:active { cursor: grabbing; }
+.ego-svg .rings circle { fill: none; stroke: var(--border); stroke-dasharray: 2 5; }
+.ego-svg .rings circle.halo { stroke: none; }
+.ego-svg .rings text { fill: var(--muted); font-size: 10px; letter-spacing: .03em; }
+.ego-svg .links line { stroke: var(--muted); stroke-opacity: .22; stroke-linecap: round; transition: stroke-opacity .2s; }
+.ego-svg .spokes line { stroke: var(--accent); stroke-opacity: .16; stroke-linecap: round; transition: stroke-opacity .2s; }
+.ego-svg line.hot { stroke: var(--accent); stroke-opacity: .85; }
+.ego-svg line.dim { stroke-opacity: .05; }
+.ego-svg .nd { cursor: pointer; transition: opacity .2s; }
+.ego-svg .nd .dot { stroke: var(--surface); stroke-width: 2; }
+.ego-svg .nd.ego .dot { stroke-width: 3; filter: drop-shadow(0 2px 6px rgba(0,0,0,.18)); }
+.ego-svg .nd.sel .dot { stroke: var(--text); stroke-width: 2.5; }
+.ego-svg .nd.dim { opacity: .15; }
+.ego-svg .ripple { fill: none; stroke-width: 2; opacity: .7; pointer-events: none; }
+.ego-svg .labels text { font-size: 11px; fill: var(--text-2); text-anchor: middle; paint-order: stroke; stroke: var(--surface); stroke-width: 3.5px; stroke-linejoin: round; pointer-events: none; transition: opacity .2s; }
+.ego-svg .labels text.lab { fill: var(--text); font-weight: 600; }
+.ego-svg .labels text.ego { fill: var(--text); font-weight: 700; font-size: 14px; }
+.ego-svg .labels text.dim { opacity: .12; }
+.zoom-ctl { position: absolute; right: 12px; top: 12px; display: flex; flex-direction: column; gap: 4px; }
+.zoom-ctl button { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text-2); font-size: 16px; line-height: 1; cursor: pointer; }
+.zoom-ctl button:hover { color: var(--text); border-color: var(--accent); }
+.net-hint { font-size: 12px; color: var(--muted); margin: 0; padding: 0 16px 12px; }
+.tooltip b { font-weight: 600; }
+
+/* map */
+.map-timeline { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; }
+.map-layout { display: grid; grid-template-columns: 1fr 240px; gap: 20px; align-items: start; }
+@media (max-width: 860px) { .map-layout { grid-template-columns: 1fr; } }
+.map-stage { position: relative; }
+#map svg { display: block; width: 100%; height: auto; }
+#map .country { stroke: var(--surface); stroke-width: .4; transition: fill .5s ease; }
+#map .country.on:hover { stroke: var(--text); stroke-width: 1; }
+#map .sphere { fill: none; stroke: var(--border); }
+.map-stage .yr-big { top: 0; left: 4px; }
+.map-legend { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); margin-top: 6px; }
+.map-legend .ramp { height: 8px; width: 160px; border-radius: 4px; }
+
+/* heatmap */
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg button { font: inherit; font-size: 13px; padding: 6px 12px; border: 0; background: var(--surface); color: var(--text-2); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--border); }
+.seg button.on { background: var(--accent); color: #fff; }
+.heat-wrap { overflow-x: auto; }
+.heat { display: grid; gap: 2px; font-size: 12px; min-width: max-content; }
+.heat .nm { padding-right: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; color: var(--text); align-self: center; }
+.heat .nm a { color: inherit; }
+.heat .yr { color: var(--muted); font-size: 10px; text-align: center; font-variant-numeric: tabular-nums; }
+.heat .cell { width: 26px; height: 22px; border-radius: 3px; background: var(--grid); }
+.heat .cell:hover { outline: 2px solid var(--text); outline-offset: -1px; }
+.heat .tot { padding-left: 10px; color: var(--text-2); font-variant-numeric: tabular-nums; align-self: center; text-align: right; }
+.ego-svg .iso-ring { fill: none; stroke: var(--border); stroke-dasharray: 2 6; }
+.ego-svg .links.team line { stroke: var(--accent); stroke-opacity: .35; }
+.ego-svg .links.team line.hot { stroke-opacity: .9; }
+.ego-svg .links.team line.dim { stroke-opacity: .06; }
+
+[hidden] { display: none !important; }
+.tbl td.num { white-space: nowrap; }
