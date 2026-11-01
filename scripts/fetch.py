@@ -35,6 +35,10 @@ WORK_FIELDS = ",".join([
 
 
 # ------------------------------------------------------------------ OpenAlex client
+class BudgetExhausted(RuntimeError):
+    """OpenAlex's free daily budget (about US$1 with a free key) is used up until midnight UTC."""
+
+
 class OpenAlex:
     def __init__(self, api_key: str | None):
         import requests  # imported here so --from-raw works without it
@@ -50,6 +54,10 @@ class OpenAlex:
             self.calls += 1
             if r.status_code == 200:
                 return r.json()
+            if r.status_code == 429:
+                reset = r.headers.get("X-RateLimit-Reset", "")
+                if reset.isdigit() and int(reset) > 120:   # not a per-second limit: the daily budget is gone
+                    raise BudgetExhausted(f"OpenAlex daily budget used up; it resets in about {int(reset) // 3600 + 1} h (midnight UTC)")
             if r.status_code in (429, 500, 502, 503, 504):
                 ra = r.headers.get("Retry-After", "")
                 wait = min(int(ra), 60) if ra.isdigit() else 2 ** attempt * (3 if r.status_code == 429 else 1)
@@ -156,7 +164,7 @@ def fetch_raw(cfg: dict, api_key: str | None) -> dict:
 
 
 def recover_missing_papers(oa: OpenAlex, raw: dict, scholar: dict, cache: dict, max_age_days: int,
-                           max_lookups: int = 400) -> int:
+                           max_lookups: int = 60) -> int:
     """Papers on someone's Google Scholar profile that OpenAlex didn't list under their record(s)
     (usually because OpenAlex split the person into several records). Look each one up by title and,
     if the OpenAlex copy has an author with the member's name, add it and remember that author ID."""
@@ -188,7 +196,11 @@ def recover_missing_papers(oa: OpenAlex, raw: dict, scholar: dict, cache: dict, 
                 if lookups >= max_lookups:
                     continue
                 lookups += 1
-                res = oa.get("/works", search=re.sub(r"[^\w\s]", " ", t)[:250], per_page=5, select=WORK_FIELDS) or {}
+                try:
+                    res = oa.get("/works", search=re.sub(r"[^\w\s]", " ", t)[:250], per_page=5, select=WORK_FIELDS) or {}
+                except BudgetExhausted:
+                    print("  OpenAlex budget reached - the remaining titles will be checked next run")
+                    break
                 results = res.get("results", [])
                 seen[key] = {"checked": today.isoformat(), "work": None}
             for w in results:
@@ -216,19 +228,27 @@ def fetch_citing_countries(oa: OpenAlex, work_ids: list[str]) -> dict:
     by_year: dict[str, Counter] = defaultdict(Counter)
     papers_by_year: Counter = Counter()
     ids = sorted(set(work_ids))
+    first_detail = dt.date.today().year - 14
     for i in range(0, len(ids), 100):
         flt = "cites:" + "|".join(ids[i:i + 100])
         res = oa.get("/works", filter=flt, group_by="publication_year") or {}
+        years = []
         for g in res.get("group_by", []):
             y = str(g.get("key"))
-            if not y.isdigit():
-                continue
-            papers_by_year[y] += g.get("count", 0)
-            r = oa.get("/works", filter=f"{flt},publication_year:{y}", group_by="authorships.countries") or {}
+            if y.isdigit():
+                papers_by_year[y if int(y) >= first_detail else str(first_detail - 1)] += g.get("count", 0)
+                years.append(int(y))
+        buckets = sorted({y for y in years if y >= first_detail})
+        if any(y < first_detail for y in years):
+            buckets.insert(0, None)          # everything before the detailed years, in one request
+        for y in buckets:
+            yf = f"publication_year:<{first_detail}" if y is None else f"publication_year:{y}"
+            key = str(first_detail - 1) if y is None else str(y)
+            r = oa.get("/works", filter=f"{flt},{yf}", group_by="authorships.countries") or {}
             for c in r.get("group_by", []):
                 cc = short(str(c.get("key") or ""))
                 if cc and len(cc) == 2 and cc.isalpha():
-                    by_year[y][cc.upper()] += c.get("count", 0)
+                    by_year[key][cc.upper()] += c.get("count", 0)
     print(f"Citing countries: {len({c for v in by_year.values() for c in v})} countries, "
           f"~{sum(papers_by_year.values())} citing papers")
     return {"by_year": {y: dict(c) for y, c in sorted(by_year.items())}, "papers_by_year": dict(sorted(papers_by_year.items()))}
@@ -766,7 +786,14 @@ def main():
     else:
         if not key:
             sys.exit("Set OPENALEX_API_KEY (free at https://openalex.org/settings/api)")
-        raw = fetch_raw(cfg, key)
+        try:
+            raw = fetch_raw(cfg, key)
+        except BudgetExhausted as e:
+            print(f"::warning::{e}. Keeping the currently published data; the site is redeployed unchanged.")
+            return
+        except Exception as e:
+            print(f"::warning::OpenAlex unavailable ({e}). Keeping the currently published data.")
+            return
         if args.save_raw:
             Path(args.save_raw).write_text(json.dumps(raw))
 
@@ -784,9 +811,11 @@ def main():
     if not args.from_raw and key and scholar and st.get("recover_from_scholar", True):
         print("Looking up Scholar papers OpenAlex didn't list...")
         try:
-            recover_missing_papers(OpenAlex(key), raw, scholar, oa_cache, max_age_days=30)
+            recover_missing_papers(OpenAlex(key), raw, scholar, oa_cache, max_age_days=60)
         except Exception as e:
             print(f"  ! recovery step failed: {e}", file=sys.stderr)
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(json.dumps(oa_cache, separators=(",", ":"), ensure_ascii=False))
     data = build(cfg, raw, scholar)
     citing = raw.get("citing")
     old = oa_cache.get("citing")
