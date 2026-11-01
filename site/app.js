@@ -325,7 +325,7 @@
     const links = [];
     if (m.scholar) links.push(`<a href="${esc(m.scholar)}" target="_blank" rel="noopener">Google Scholar ↗</a>`);
     if (m.orcid) links.push(`<a href="https://orcid.org/${esc(m.orcid)}" target="_blank" rel="noopener">ORCID ↗</a>`);
-    m.openalex.forEach((id) => links.push(`<a href="https://openalex.org/authors/${esc(id)}" target="_blank" rel="noopener">OpenAlex ↗</a>`));
+    if (m.openalex.length) links.push(`<a href="https://openalex.org/authors/${esc(m.openalex[0])}" target="_blank" rel="noopener"${m.openalex.length > 1 ? ` title="OpenAlex has ${m.openalex.length} records for this person; this is the main one"` : ""}>OpenAlex ↗</a>`);
     $("#member-links").innerHTML = `<span class="muted">${esc(m.role || "")}</span>` + links.join("");
 
     const oa = m.openalex_counts || {};
