@@ -51,7 +51,8 @@ class OpenAlex:
             if r.status_code == 200:
                 return r.json()
             if r.status_code in (429, 500, 502, 503, 504):
-                wait = 2 ** attempt
+                ra = r.headers.get("Retry-After", "")
+                wait = min(int(ra), 60) if ra.isdigit() else 2 ** attempt * (3 if r.status_code == 429 else 1)
                 print(f"  OpenAlex {r.status_code}, retrying in {wait}s", file=sys.stderr)
                 time.sleep(wait)
                 continue
@@ -154,12 +155,15 @@ def fetch_raw(cfg: dict, api_key: str | None) -> dict:
             "members": members, "authors": authors, "works": list(works.values())}
 
 
-def recover_missing_papers(oa: OpenAlex, raw: dict, scholar: dict, max_lookups: int = 400) -> int:
+def recover_missing_papers(oa: OpenAlex, raw: dict, scholar: dict, cache: dict, max_age_days: int,
+                           max_lookups: int = 400) -> int:
     """Papers on someone's Google Scholar profile that OpenAlex didn't list under their record(s)
     (usually because OpenAlex split the person into several records). Look each one up by title and,
     if the OpenAlex copy has an author with the member's name, add it and remember that author ID."""
     have = {short(w["id"]): w for w in raw["works"]}
     lookups = found = 0
+    seen = cache.setdefault("recovered", {})
+    today = dt.date.today()
     for m in raw["members"]:
         prof = scholar.get(scholar_id(m.get("scholar")) or "")
         sig = name_sig(m["name"])
@@ -172,18 +176,28 @@ def recover_missing_papers(oa: OpenAlex, raw: dict, scholar: dict, max_lookups: 
         for a in prof.get("articles") or []:
             t = a.get("title") or ""
             nt = norm_title(t)
-            if len(nt) < 20 or nt in mine_titles or lookups >= max_lookups:
+            if len(nt) < 20 or nt in mine_titles:
                 continue
             if scholar_matches([{"id": "x", "title": w.get("display_name")} for w in mine], [t]):
                 continue
-            lookups += 1
-            res = oa.get("/works", search=re.sub(r"[^\w\s]", " ", t)[:250], per_page=5, select=WORK_FIELDS) or {}
-            for w in res.get("results", []):
+            key = f"{m['name']}|{nt}"
+            hit_cached = seen.get(key)
+            if hit_cached and (today - dt.date.fromisoformat(hit_cached["checked"])).days < max_age_days:
+                results = [hit_cached["work"]] if hit_cached.get("work") else []
+            else:
+                if lookups >= max_lookups:
+                    continue
+                lookups += 1
+                res = oa.get("/works", search=re.sub(r"[^\w\s]", " ", t)[:250], per_page=5, select=WORK_FIELDS) or {}
+                results = res.get("results", [])
+                seen[key] = {"checked": today.isoformat(), "work": None}
+            for w in results:
                 if not scholar_matches([{"id": "x", "title": w.get("display_name")}], [t]):
                     continue
                 hit = [short((au.get("author") or {}).get("id")) for au in w.get("authorships") or []
                        if name_sig((au.get("author") or {}).get("display_name") or au.get("raw_author_name")) == sig]
                 if hit and hit[0]:
+                    seen[key]["work"] = w
                     have.setdefault(short(w["id"]), w)
                     if hit[0] not in my_ids:
                         my_ids.add(hit[0])
@@ -192,7 +206,7 @@ def recover_missing_papers(oa: OpenAlex, raw: dict, scholar: dict, max_lookups: 
                     found += 1
                     break
     raw["works"] = list(have.values())
-    print(f"Recovered {found} paper(s) from Google Scholar titles ({lookups} OpenAlex searches)")
+    print(f"Recovered {found} paper(s) from Google Scholar titles ({lookups} new OpenAlex searches)")
     return found
 
 
@@ -762,22 +776,43 @@ def main():
         print("Google Scholar profiles...")
         scholar = fetch_scholar(raw["members"], os.environ.get("SERPAPI_KEY"),
                                 Path(args.scholar_cache), int(st.get("scholar_refresh_days", 20)))
+    # slow OpenAlex lookups are cached between runs so monthly runs stay cheap and a failure
+    # (e.g. OpenAlex rate limits) never wipes what we already know
+    cache_path = Path(args.scholar_cache).parent / "openalex_cache.json"
+    oa_cache = json.loads(cache_path.read_text()) if cache_path.exists() else {}
+    slow_days = int(st.get("slow_refresh_days", 20))
     if not args.from_raw and key and scholar and st.get("recover_from_scholar", True):
         print("Looking up Scholar papers OpenAlex didn't list...")
         try:
-            recover_missing_papers(OpenAlex(key), raw, scholar)
+            recover_missing_papers(OpenAlex(key), raw, scholar, oa_cache, max_age_days=30)
         except Exception as e:
             print(f"  ! recovery step failed: {e}", file=sys.stderr)
     data = build(cfg, raw, scholar)
     citing = raw.get("citing")
-    if citing is None and key and not args.from_raw and st.get("citing_countries", True):
+    old = oa_cache.get("citing")
+    fresh = old and (dt.date.today() - dt.date.fromisoformat(old.get("checked", "2000-01-01"))).days < slow_days
+    if citing is None and fresh:
+        citing = old
+    elif citing is None and key and not args.from_raw and st.get("citing_countries", True):
         print("Where the lab is cited from...")
         try:
             citing = fetch_citing_countries(OpenAlex(key), [w["id"] for w in data["works"]])
-        except Exception as e:  # never lose the whole run over the map
-            print(f"  ! citing-countries lookup failed: {e}", file=sys.stderr)
+            citing["checked"] = dt.date.today().isoformat()
+            oa_cache["citing"] = citing
+        except Exception as e:  # never lose the map over a failed lookup: keep the last good one
+            print(f"  ! citing-countries lookup failed ({e}); keeping the previous map data", file=sys.stderr)
+            citing = old
+    if citing is None:  # last resort: the map from the currently published data
+        prev = Path(args.out) / "data.json"
+        if prev.exists():
+            citing = json.loads(prev.read_text()).get("citing")
+            if citing:
+                oa_cache.setdefault("citing", {**citing, "checked": "2000-01-01"})
     if citing:
         data["citing"] = citing
+    if not args.from_raw:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(json.dumps(oa_cache, separators=(",", ":"), ensure_ascii=False))
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / "data.json").write_text(json.dumps(data, separators=(",", ":")))

@@ -204,3 +204,8 @@ input[type=search] { min-width: 240px; flex: 1 1 240px; max-width: 420px; }
 
 [hidden] { display: none !important; }
 .tbl td.num { white-space: nowrap; }
+.year-band { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; background: linear-gradient(180deg, var(--accent-soft), transparent 140%); }
+.year-band .kpi { background: var(--surface); }
+.year-head { display: flex; align-items: baseline; gap: 10px; margin: 0 2px 10px; }
+.year-head h3 { font-size: 16px; margin: 0; }
+.year-head span { font-size: 13px; }

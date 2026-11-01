@@ -31,6 +31,10 @@
     <!-- ================= OVERVIEW ================= -->
     <section id="tab-overview" class="tab">
       <div class="kpis" id="lab-kpis"></div>
+      <div class="year-band">
+        <div class="year-head"><h3 id="year-title">This year so far</h3><span class="muted" id="year-sub"></span></div>
+        <div class="kpis" id="year-kpis"></div>
+      </div>
       <div class="grid2">
         <div class="card"><h3>Citations received per year</h3><p class="note" id="lab-cby-note">Each paper counted once, even when several members co-authored it.</p><div class="chart"><canvas id="c-lab-cby"></canvas></div></div>
         <div class="card"><h3>Total citations over time</h3><p class="note">Running total at the end of each year.</p><div class="chart"><canvas id="c-lab-cum"></canvas></div></div>
@@ -49,9 +53,12 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><div><h3>Who published when</h3><p class="note" style="margin:0">Each row is a member, each column a year. Darker = more.</p></div>
+        <div class="card-head"><div><h3>Who published when</h3><p class="note" style="margin:0" id="heat-note">Each row is a member, each column a year. Darker = more.</p></div>
+          <div class="filters"><label>Order <select id="heat-sort" aria-label="Order rows by">
+            <option value="first">By first publication</option><option value="name">Alphabetical</option>
+            <option value="total">Most in total</option><option value="recent">Most in the last 3 years</option></select></label>
           <div class="seg" id="heat-metric" role="group" aria-label="Measure">
-            <button data-m="pubs" class="on">Papers</button><button data-m="cites">Citations received</button></div></div>
+            <button data-m="pubs" class="on">Papers</button><button data-m="cites">Citations received</button></div></div></div>
         <div class="heat-wrap"><div id="heatmap"></div></div>
       </div>
       <div class="card" id="history-card" hidden><h3>Monthly snapshots</h3><p class="note">Recorded every time the data refreshes, so this history becomes more detailed month by month.</p><div class="chart"><canvas id="c-history"></canvas></div></div>

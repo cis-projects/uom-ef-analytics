@@ -158,9 +158,10 @@
       [fmt(s.works), "Papers", `${fmt(D.members.length)} members`],
       [fmt(s.citations), "Citations", `<span id="lab-cit-sub">each paper counted once</span>`],
       [fmt(s.h), "Lab h-index", `i10-index ${fmt(s.i10)}`],
-      [fmt(mo.now), `Citations in ${THIS_YEAR} so far`, `${fmt(mo.last)} in all of ${LAST_YEAR}${mo.pace == null ? "" : ` · on pace for ${paceHtml(mo)}`}`],
       [fmt(s.external_collaborators), "Outside collaborators", `from ${fmt(Object.keys(s.countries).length)} countries`],
+      ...(D.citing ? [[fmt(new Set(Object.values(D.citing.by_year).flatMap(Object.keys)).size), "Countries citing us", "all time"]] : []),
     ]);
+    renderThisYear(mo);
     const yrs = s.years || D.years;
     if (s.source === "Google Scholar") {
       $("#lab-cby-note").textContent = "Sum of members' Google Scholar profiles, so a paper shared by two members counts for both.";
@@ -193,6 +194,37 @@
     renderMap();
   }
 
+  // ------------------------------------------------------------ this year so far
+  function renderThisYear(mo) {
+    const nt = (t) => String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+    // papers: Scholar lists plus OpenAlex (stale Scholar profiles miss recent papers), each title once
+    const papersIn = (yr) => {
+      const titles = new Set();
+      D.members.forEach((m) => (m.scholar_papers || []).forEach((p) => p.year === yr && titles.add(nt(p.title))));
+      D.works.forEach((w) => w.year === yr && titles.add(nt(w.title)));
+      return titles.size;
+    };
+    const papersNow = papersIn(THIS_YEAR), papersLast = papersIn(LAST_YEAR);
+    // first-time collaborators and team partnerships this year
+    const firstYear = (y) => Math.min(...Object.keys(y || {}).map(Number));
+    const newCo = D.network.nodes.filter((n) => !n.lab && firstYear(n.y) === THIS_YEAR).length;
+    const pairFirst = {};
+    D.works.forEach((w) => { const ks = w.lab.slice().sort(); for (let i = 0; i < ks.length; i++) for (let j = i + 1; j < ks.length; j++) {
+      const k = `${ks[i]}|${ks[j]}`; pairFirst[k] = Math.min(pairFirst[k] || 9999, w.year || 9999); } });
+    const newPairs = Object.values(pairFirst).filter((y) => y === THIS_YEAR).length;
+    const items = [
+      [fmt(mo.now), "Citations received", `${fmt(mo.last)} in all of ${LAST_YEAR}${mo.pace == null ? "" : ` · on pace for ${paceHtml(mo)}`}`],
+      [fmt(papersNow), "Papers published", `${fmt(papersLast)} in all of ${LAST_YEAR}`],
+      [fmt(newCo), "New outside co-authors", "first paper with the team this year"],
+      [fmt(newPairs), "New team partnerships", "members publishing together for the first time"],
+    ];
+    const cy = D.citing?.by_year?.[String(THIS_YEAR)];
+    if (cy) items.push([fmt(Object.keys(cy).length), "Countries citing us", `this year`]);
+    $("#year-title").textContent = `${THIS_YEAR} so far`;
+    $("#year-sub").textContent = `Up to ${new Date(D.generated_at).toLocaleDateString("en-GB", { day: "numeric", month: "long" })}`;
+    kpis($("#year-kpis"), items);
+  }
+
   // ------------------------------------------------------------ shared colour ramp (one hue, light -> dark)
   function ramp() {
     const dark = document.documentElement.dataset.theme === "dark" ||
@@ -202,13 +234,21 @@
   }
 
   // ------------------------------------------------------------ heatmap: members x years
-  let heatMetric = "pubs";
+  let heatMetric = "pubs", heatSort = "first";
+  const total = (m, k) => Object.values(m[k] || {}).reduce((a, b) => a + b, 0);
+  const heatSorts = {
+    first: (a, b) => (a.first_year || 9999) - (b.first_year || 9999) || a.name.localeCompare(b.name),
+    name: (a, b) => a.name.localeCompare(b.name),
+    total: (a, b) => total(b, heatMetric === "pubs" ? "pubs_by_year" : "cites_by_year") - total(a, heatMetric === "pubs" ? "pubs_by_year" : "cites_by_year") || a.name.localeCompare(b.name),
+    recent: (a, b) => { const r = (m) => [0, 1, 2].reduce((t, i) => t + ((m[heatMetric === "pubs" ? "pubs_by_year" : "cites_by_year"] || {})[String(THIS_YEAR - i)] || 0), 0);
+      return r(b) - r(a) || a.name.localeCompare(b.name); },
+  };
   function renderHeatmap() {
     const el = $("#heatmap");
     if (!window.d3) return;
     const key = heatMetric === "pubs" ? "pubs_by_year" : "cites_by_year";
     const ms = D.members.filter((m) => m.active || $("#show-alumni").checked)
-      .sort((a, b) => (a.first_year || 9999) - (b.first_year || 9999) || a.name.localeCompare(b.name));
+      .sort(heatSorts[heatSort]);
     const first = Math.min(...ms.flatMap((m) => Object.keys(m[key] || {}).map(Number)).filter((y) => y > 1900), THIS_YEAR);
     const START = Math.max(first, THIS_YEAR - 19);
     const yrs = range(START, THIS_YEAR), early = first < START;
@@ -238,6 +278,7 @@
       tipEl.style.left = `${Math.min(e.clientX + 14, innerWidth - 300)}px`; tipEl.style.top = `${e.clientY + 14}px`;
     };
     el.onmouseleave = () => (tipEl.hidden = true);
+    const hs = $("#heat-sort"); hs.value = heatSort; hs.onchange = () => { heatSort = hs.value; renderHeatmap(); };
     document.querySelectorAll("#heat-metric button").forEach((b) => {
       b.classList.toggle("on", b.dataset.m === heatMetric);
       b.onclick = () => { heatMetric = b.dataset.m; renderHeatmap(); };
