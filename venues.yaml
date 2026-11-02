@@ -12,6 +12,10 @@
 # or nothing at all - those lines say 'from Scholar'. New venues found later are listed in data/venues_to_review.yaml.
 # Sorted by number of papers in the last 5 years. CHECK = this draft disagrees with OpenAlex about the type.
 
+papers:
+  "10.1145/3701716.3716878": {rank: "unranked"}             # The AI Ally Project - WWW Companion, not the main track
+  "10.25916/sut.26291413":   {rank: "unranked", year: 2004} # Adapting roles for AOSE - repository copy, ICSE was 2004
+  
 aliases:
   "Annual Conference of the Australasian Society for Computers in Learning in Tertiary Education (ASCILITE)": "ASCILITE Publications"
   "People, partnerships and pedagogies. Proceedings ASCILITE": "ASCILITE Publications"
@@ -38,7 +42,7 @@ venues:
   - {name: "Pacific Journal of Technology Enhanced Learning", type: journal, reviewed: false}  # 6 papers (6 in the last 5 years) · from Scholar
   - {name: "Swinburne figshare (Swinburne University of Technology)", type: preprint, reviewed: false}  # 18 papers (5 in the last 5 years)
   - {name: "Pacific Asia Conference on Information Systems", type: conference, reviewed: false}  # 9 papers (5 in the last 5 years) · from Scholar
-  - {name: "International Conference on Artificial Intelligence in Education", type: conference, reviewed: false}  # 7 papers (5 in the last 5 years) · from Scholar
+  - {name: "International Conference on Artificial Intelligence in Education", type: conference, rank: "A", reviewed: false}  # 7 papers (5 in the last 5 years) · from Scholar
   - {name: "International Conference on Enterprise Information Systems", type: conference, reviewed: false}  # 5 papers (5 in the last 5 years) · from Scholar
   - {name: "Journal of the Association for Information Systems", type: journal, reviewed: false}  # 31 papers (4 in the last 5 years)
   - {name: "European Journal of Engineering Education", type: journal, reviewed: false}  # 7 papers (4 in the last 5 years)
@@ -47,7 +51,7 @@ venues:
   - {name: "SEFI Annual Conference", type: conference, reviewed: false}  # 4 papers (3 in the last 5 years) · from Scholar
   - {name: "ACM SIGCAS/SIGCHI Conference on Computing and Sustainable Societies (COMPASS)", type: conference, reviewed: false}  # 3 papers (3 in the last 5 years)
   - {name: "Information Systems Education Journal", type: journal, reviewed: false}  # 3 papers (3 in the last 5 years)
-  - {name: "International Conference on Learning Analytics and Knowledge (LAK)", type: conference, reviewed: false}  # 3 papers (3 in the last 5 years)
+  - {name: "International Conference on Learning Analytics and Knowledge (LAK)", type: conference, rank: "A", reviewed: false}  # 3 papers (3 in the last 5 years)
   - {name: "Proceedings of the ISCAP Conference ISSN", type: conference, reviewed: false}  # 3 papers (3 in the last 5 years) · from Scholar
   - {name: "Australian Conference on Computer-Human Interaction (OzCHI)", type: conference, reviewed: false}  # 7 papers (2 in the last 5 years)
   - {name: "IEEE International Conference on Teaching, Assessment, and Learning for Engineering", type: conference, reviewed: false}  # 5 papers (2 in the last 5 years)
@@ -56,7 +60,7 @@ venues:
   - {name: "Information and Software Technology", type: journal, reviewed: false}  # 4 papers (2 in the last 5 years)
   - {name: "Australasian Computing Education Conference", type: conference, reviewed: false}  # 3 papers (2 in the last 5 years)
   - {name: "ACM International Symposium on Blockchain and Secure Critical Infrastructure (BSCI)", type: conference, reviewed: false}  # 2 papers (2 in the last 5 years)
-  - {name: "ACM Technical Symposium on Computer Science Education (SIGCSE)", type: conference, reviewed: false}  # 2 papers (2 in the last 5 years)
+  - {name: "ACM Technical Symposium on Computer Science Education (SIGCSE)", type: conference, rank: "A", reviewed: false}  # 2 papers (2 in the last 5 years)
   - {name: "AIS SIGED International Conference on Information Systems", type: conference, reviewed: false}  # 2 papers (2 in the last 5 years) · from Scholar
   - {name: "Behaviour and Information Technology", type: journal, reviewed: false}  # 2 papers (2 in the last 5 years)
   - {name: "Computers and Education Open", type: journal, reviewed: false}  # 2 papers (2 in the last 5 years)
@@ -79,7 +83,7 @@ venues:
   - {name: "Anais do ... Simpósio Brasileiro de Informática na Educação/Anais do Simpósio Brasileiro de Informática na Educação", type: conference, reviewed: false}  # 3 papers (1 in the last 5 years)
   - {name: "Annual Conference of the European Society for Engineering Education (SEFI)", type: conference, reviewed: false}  # 3 papers (1 in the last 5 years) · from Scholar
   - {name: "Proceedings of the", type: conference, reviewed: false}  # 3 papers (1 in the last 5 years) · from Scholar
-  - {name: "ACM/IEEE International Conference on Software Engineering: Companion Proceedings (ICSE-Companion)", type: conference, reviewed: false}  # 2 papers (1 in the last 5 years)
+  - {name: "ACM/IEEE International Conference on Software Engineering: Companion Proceedings (ICSE-Companion)", type: conference, rank: "A*", reviewed: true}
   - {name: "Americas Conference on Information Systems", type: conference, reviewed: false}  # 2 papers (1 in the last 5 years) · from Scholar
   - {name: "European Conference on Information Systems", type: conference, reviewed: false}  # 2 papers (1 in the last 5 years) · from Scholar
   - {name: "Findings of the Association for Computational Linguistics: ACL (Findings of ACL)", type: conference, reviewed: false}  # 2 papers (1 in the last 5 years)
@@ -139,7 +143,7 @@ venues:
   - {name: "Integrated science", type: book, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "International Conference on Industrial Engineering and Operations Management (IEOM)", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "International Conference on Network and System Security", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
-  - {name: "International Conference on Software Engineering (ICSE", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
+  - {name: "International Conference on Software Engineering (ICSE", type: conference, rank: "A*", reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
   - {name: "International Conference on Software Engineering Research", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
   - {name: "International Convention on Information and Communication Technology, Electronics and Microelectronics", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "International Higher Education", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
@@ -155,7 +159,7 @@ venues:
   - {name: "Journal of Intellectual Disability Research", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
   - {name: "Journal of Medical Internet Research", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "Journal of Studies in International Education", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
-  - {name: "Koli Calling International Conference on Computing Education Research", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years)
+  - {name: "Koli Calling International Conference on Computing Education Research", type: conference, rank: "B", reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "Lecture notes in educational technology", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · CHECK: OpenAlex says book
   - {name: "Mathematics", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "Open Conference on Computers in Education", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
@@ -164,7 +168,7 @@ venues:
   - {name: "Proceedings of The Australian Conference on Science and Mathematics", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
   - {name: "Proceedings of the Biennial Conference of The Modelling and Simulation", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
   - {name: "Proceedings of the International Workshop on AI Literacy Education For All", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
-  - {name: "Proceedings of the koli calling international conference on computing", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
+  - {name: "Proceedings of the koli calling international conference on computing", type: conference, rank: "B", reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
   - {name: "RePEc: Research Papers in Economics", type: preprint, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "Research in Engineering Education Symposium and Regional Conference in", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
   - {name: "Studies in computational intelligence", type: book, reviewed: false}  # 1 paper (1 in the last 5 years)

@@ -247,6 +247,10 @@
   // ------------------------------------------------------------ overview: new sections
   const isTopRank = (r) => /^(Q1|Q2|A\*|A)$/.test(r || "");
   function rankBadge(w) {
+    if (w.rank !== undefined) {   // set for this one paper in venues.yaml
+      return w.rank ? `<span class="badge ${isTopRank(w.rank) ? "hi" : ""}" title="${esc(w.rank)} · set for this paper in venues.yaml">${esc(w.rank)}</span>`
+        : `<span class="badge none" title="Unranked (set for this paper in venues.yaml)">—</span>`;
+    }
     const v = (D.venues || {})[w.vkey] || {};
     if (!v.rank) return `<span class="badge none" title="Unranked venue">—</span>`;
     const label = (v.src || "").startsWith("CORE journals") ? `CORE ${v.rank}` : v.rank;

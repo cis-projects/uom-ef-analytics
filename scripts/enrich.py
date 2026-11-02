@@ -328,6 +328,25 @@ def load_venue_list(path: Path) -> tuple[dict, dict]:
     return aliases, venues
 
 
+def _paper_key(s: str | None) -> str:
+    """A DOI in any spelling ('https://doi.org/10.1/X', '10.1/x') -> '10.1/x'; anything else -> a title key."""
+    s = (s or "").strip().lower()
+    s = re.sub(r"^https?://(dx\.)?doi\.org/", "", s)
+    return s if s.startswith("10.") else "t:" + norm(s)
+
+
+def load_paper_overrides(path: Path) -> dict:
+    """venues.yaml 'papers:' - corrections for single papers, keyed by DOI (or by exact title):
+         papers:
+           "10.1145/3701716.3716878": {rank: "unranked"}
+           "10.25916/sut.26291413": {rank: "unranked", year: 2004}
+       Fields: rank, type, venue (move the paper to another venue name), year."""
+    if not path.exists():
+        return {}
+    y = yaml.safe_load(path.read_text()) or {}
+    return {_paper_key(k): (v or {}) for k, v in (y.get("papers") or {}).items() if isinstance(v, dict)}
+
+
 def apply_venues(data: dict, raw_sources: dict, venues_path: Path, data_dir: Path, settings: dict, impact: dict,
                  online: bool = True) -> None:
     """Give each work a canonical venue, output type and quality tier; add data['venues']."""
@@ -353,6 +372,20 @@ def apply_venues(data: dict, raw_sources: dict, venues_path: Path, data_dir: Pat
             keep_extra.append(e)
     data["extra_papers"] = keep_extra
     log(f"Venues: added {n_added} Scholar-only papers with a known venue")
+    # per-paper corrections from venues.yaml: venue and year first (they decide where a paper is counted)
+    P = load_paper_overrides(venues_path)
+    for w in data["works"]:
+        o = P.get(_paper_key(w.get("doi"))) or P.get(_paper_key(w.get("title")))
+        if not o:
+            continue
+        w["_override"] = o
+        if o.get("year"):
+            w["year"] = int(o["year"])
+        if o.get("venue"):
+            w["venue"], w["venue_type"] = str(o["venue"]), None
+            w.pop("gs_v", None)
+    if P:
+        log(f"Paper corrections: {sum(1 for w in data['works'] if w.get('_override'))} of {len(P)} applied")
     vkey = lambda n: norm(re.sub(r"&", " and ", re.sub(r"^the\s+", "", n or "", flags=re.I)))
     known = {vkey(w["venue"]): w["venue"] for w in data["works"] if w.get("venue")}
     for w in data["works"]:
@@ -411,6 +444,20 @@ def apply_venues(data: dict, raw_sources: dict, venues_path: Path, data_dir: Pat
         v["papers"] += 1
         v["recent"] += 1 if (w.get("year") or 0) >= this_year - 4 else 0
         w.update({"venue": label, "kind": v["kind"], "tier": v["tier"], "vkey": label})
+    # ...then type and rank, which apply to that one paper only
+    for w in data["works"]:
+        o = w.pop("_override", None)
+        if not o:
+            continue
+        if KIND_KEYS.get(str(o.get("type", "")).lower()):
+            w["kind"] = KIND_KEYS[str(o["type"]).lower()]
+            v = venues.get(w.get("vkey") or "") or {}
+            w["tier"] = tier_of(w["kind"], v.get("rank") if v.get("kind") == w["kind"] else None)
+        if "rank" in o:
+            r = str(o.get("rank") or "").strip()
+            r = "" if r.lower() in ("", "unranked", "none") else r
+            w["rank"], w["rank_src"] = r, "venues.yaml (this paper)"
+            w["tier"] = tier_of(w["kind"], r or None)
     for v in venues.values():
         v["names"] = sorted(v["names"])
     data["venues"] = venues
