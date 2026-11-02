@@ -750,7 +750,11 @@ def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
 def enrich_data(data: dict, raw: dict, cfg: dict, venues_path: Path, data_dir: Path, oa_cache: dict,
                 key: str | None, online: bool) -> None:
     """Venue types and quality tiers, Scholar citations per paper, research themes (scripts/enrich.py)."""
-    import enrich
+    try:
+        import enrich
+    except Exception as e:   # a missing extra layer must never stop the site from building
+        print(f"::warning::scripts/enrich.py could not be loaded ({e}); venues, rankings and themes are skipped this run.")
+        return
     st = cfg.get("settings", {})
     raw_sources = {}
     for w in raw["works"]:
