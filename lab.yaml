@@ -3,9 +3,9 @@
 # ---------------------------------------------------------------
 
 lab:
-  name: "CIS EF Team"
-  institution: "University of Melbourne"   # used to auto-match members given by name only
-  description: "Publications, citations and collaborations of the lab, updated monthly from OpenAlex."
+  name: "School of Computing and Information Systems, Education-Focused Team"
+  institution: "The University of Melbourne"
+  expert: https://findanexpert.unimelb.edu.au/group/2014439-education-focused
 
 settings:
   # OpenAlex work types to leave out of every count
