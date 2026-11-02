@@ -8,6 +8,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-cloud@1.2.7/build/d3.layout.cloud.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -20,7 +22,7 @@
       <nav class="tabs" id="tabs">
         <a href="#overview" data-tab="overview">Overview</a>
         <a href="#member" data-tab="member">Members</a>
-        <a href="#network" data-tab="network">Network</a>
+        <a href="#analytics" data-tab="analytics">Analytics</a>
         <a href="#venues" data-tab="venues">Venues</a>
         <a href="#papers" data-tab="papers">Papers</a>
       </nav>
@@ -39,6 +41,16 @@
         <div class="card"><h3>Citations received per year</h3><p class="note" id="lab-cby-note">Each paper counted once, even when several members co-authored it.</p><div class="chart"><canvas id="c-lab-cby"></canvas></div></div>
         <div class="card"><h3>Total citations over time</h3><p class="note">Running total at the end of each year.</p><div class="chart"><canvas id="c-lab-cum"></canvas></div></div>
       </div>
+      <div class="card" id="themes-card" hidden>
+        <div class="card-head"><div><h3>What we work on</h3>
+          <p class="note" style="margin:0" id="themes-note"></p></div></div>
+        <div class="themes">
+          <div id="cloud"></div>
+          <div><h3 style="font-size:13px;margin:4px 0 8px">Top 10 themes <span class="muted" style="font-weight:400">· by members</span></h3><ol class="top10" id="top10"></ol>
+            <div class="legend" id="cloud-legend" style="padding:10px 0 0;border:0"></div></div>
+        </div>
+        <div class="plist" id="cloud-papers" hidden></div>
+      </div>
       <div class="card" id="map-card" hidden>
         <div class="card-head"><div><h3 id="map-title">Where our work is cited</h3><p class="note" id="map-note" style="margin:0"></p></div></div>
         <div class="timeline map-timeline">
@@ -55,16 +67,16 @@
       <div class="card">
         <div class="card-head"><div><h3>Who published when</h3><p class="note" style="margin:0" id="heat-note">Each row is a member, each column a year. Darker = more.</p></div>
           <div class="filters"><label>Order <select id="heat-sort" aria-label="Order rows by">
-            <option value="first">By first publication</option><option value="name">Alphabetical</option>
-            <option value="total">Most in total</option><option value="recent">Most in the last 3 years</option></select></label>
+            <option value="recent">Most in the last 3 years</option><option value="total">Most in total</option>
+            <option value="first">By first publication</option><option value="name">Alphabetical</option></select></label>
           <div class="seg" id="heat-metric" role="group" aria-label="Measure">
             <button data-m="pubs" class="on">Papers</button><button data-m="cites">Citations received</button></div></div></div>
         <div class="heat-wrap"><div id="heatmap"></div></div>
       </div>
       <div class="card" id="history-card" hidden><h3>Monthly snapshots</h3><p class="note">Recorded every time the data refreshes, so this history becomes more detailed month by month.</p><div class="chart"><canvas id="c-history"></canvas></div></div>
       <div class="card">
-        <div class="card-head"><h3>Members</h3><label class="check"><input type="checkbox" id="show-alumni"> Show alumni</label></div>
-        <p class="note">Citations received in each year. <b>Pace</b> projects this year's citations to a full year from today and compares it with last year.</p>
+        <div class="card-head"><h3>Members</h3></div>
+        <p class="note">Sorted by citations in the last three years; click any column to re-sort. <b>Journal</b> and <b>Conf.</b> count papers by type, from OpenAlex and Google Scholar. <b>Pace</b> projects this year's citations to a full year and compares it with last year.</p>
         <div class="table-wrap"><table class="tbl" id="members-table"></table></div>
       </div>
     </section>
@@ -88,12 +100,12 @@
         <div class="card"><h3>Papers published per year</h3><div class="chart"><canvas id="c-m-pubs"></canvas></div></div>
         <div class="card"><h3>Top venues</h3><div id="m-venues"></div></div>
       </div>
-      <div class="card"><div class="card-head"><h3>Collaborators in the lab</h3><a id="m-net-link" href="#network">See collaboration network →</a></div><div id="m-collab" class="chips"></div></div>
+      <div class="card"><div class="card-head"><h3>Collaborators in the lab</h3><a id="m-net-link" href="#analytics">Network &amp; where the work goes →</a></div><div id="m-collab" class="chips"></div></div>
       <div class="card"><h3>Papers</h3><div class="table-wrap"><table class="tbl" id="m-papers"></table></div></div>
     </section>
 
     <!-- ================= NETWORK ================= -->
-    <section id="tab-network" class="tab" hidden>
+    <section id="tab-analytics" class="tab" hidden>
       <div class="filters">
         <select id="net-member" aria-label="Member"></select>
         <label id="net-min-wrap">Show co-authors with at least
@@ -109,12 +121,24 @@
             <span id="net-year-label" class="yr-label"></span>
           </div>
           <div class="net-stage"><div id="network"></div><div id="net-year-big" class="yr-big"></div><div id="net-stats" class="net-stats"></div>
-            <div class="zoom-ctl"><button id="net-zoom-in" aria-label="Zoom in">+</button><button id="net-zoom-out" aria-label="Zoom out">−</button><button id="net-fit" aria-label="Reset view">⤢</button></div>
+            <div class="zoom-ctl"><button id="net-zoom-in" aria-label="Zoom in">+</button><button id="net-zoom-out" aria-label="Zoom out">−</button><button id="net-fit" aria-label="Fit to view" title="Fit to view">⤢</button><button id="net-unpin" aria-label="Release moved circles" title="Put moved circles back">↺</button></div>
           </div>
           <div class="legend"><span><i class="dot ego"></i>Selected person</span><span><i class="dot lab"></i>Lab member</span><span><i class="dot alum"></i>Alumni</span><span><i class="dot ext"></i>Outside collaborator</span></div>
           <p class="net-hint" id="net-hint">Circles sit closer and grow larger the more papers someone shares with the selected person; lines thicken with papers written together. Swipe sideways (or drag the slider) to move through the years · pinch to zoom · drag to pan.</p>
         </div>
         <aside class="card" id="net-info"><p class="muted">Click a person to see their collaborations.</p></aside>
+      </div>
+      <div class="card" id="sankey-card">
+        <div class="card-head"><div><h3 id="sk-title">Where the work goes</h3>
+          <p class="note" style="margin:0">Type of output → venue quality tier → venue. Width = <span id="sk-unit">papers</span>. Hover to trace a flow; click any block to list its papers.</p></div>
+          <div class="filters">
+            <label>From <select id="sk-from" aria-label="From year"></select></label><label>to <select id="sk-to" aria-label="To year"></select></label>
+            <div class="seg" id="sk-metric" role="group" aria-label="Measure"><button data-m="n" class="on">Papers</button><button data-m="c">Citations</button></div>
+          </div></div>
+        <div class="sk-scroll"><div id="sankey"></div></div>
+        <div class="legend" id="sk-legend" style="border:0;padding:8px 0 0"></div>
+        <p class="note" id="sk-foot"></p>
+        <div class="plist" id="sk-papers" hidden></div>
       </div>
       <div class="grid2">
         <div class="card"><h3 id="net-side-a">Collaborating institutions</h3><p class="note">Papers co-authored with someone from each institution.</p><div id="inst-bars"></div></div>

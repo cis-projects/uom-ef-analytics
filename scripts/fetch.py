@@ -30,7 +30,7 @@ ROOT = Path(__file__).resolve().parent.parent
 API = "https://api.openalex.org"
 WORK_FIELDS = ",".join([
     "id", "doi", "display_name", "publication_year", "publication_date", "type",
-    "cited_by_count", "counts_by_year", "authorships", "primary_location",
+    "cited_by_count", "counts_by_year", "authorships", "primary_location", "keywords", "primary_topic",
 ])
 
 
@@ -551,6 +551,8 @@ def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
                     if c.get("cited_by_count")},
             "authors": auths,
             "versions": 1,
+            "kw": [k.get("display_name") for k in w.get("keywords") or [] if (k.get("score") or 0) >= 0.3 and k.get("display_name")],
+            "field": (((w.get("primary_topic") or {}).get("field") or {}).get("display_name")),
         }
 
     # --- merge preprint/published duplicates (same normalised title)
@@ -745,6 +747,36 @@ def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
     return data
 
 
+def enrich_data(data: dict, raw: dict, cfg: dict, venues_path: Path, data_dir: Path, oa_cache: dict,
+                key: str | None, online: bool) -> None:
+    """Venue types and quality tiers, Scholar citations per paper, research themes (scripts/enrich.py)."""
+    import enrich
+    st = cfg.get("settings", {})
+    raw_sources = {}
+    for w in raw["works"]:
+        src = ((w.get("primary_location") or {}).get("source") or {})
+        if src.get("display_name"):
+            raw_sources.setdefault(src["display_name"], {"id": short(src.get("id")),
+                                                        "issn": src.get("issn") or ([src["issn_l"]] if src.get("issn_l") else [])})
+    impact = (oa_cache.get("impact") or {}).get("v", {})
+    if online and key:
+        try:
+            impact = enrich.fetch_impact(OpenAlex(key), [v["id"] for v in raw_sources.values()], oa_cache)
+        except Exception as e:
+            print(f"  ! venue impact lookup failed: {e}", file=sys.stderr)
+    for step, fn in [("Scholar citations", lambda: enrich.attach_scholar(data, norm_title)),
+                     ("venues", lambda: enrich.apply_venues(data, raw_sources, venues_path, data_dir, st, impact, online)),
+                     ("themes", lambda: enrich.build_themes(data, st, norm_title))]:
+        try:
+            fn()
+        except Exception as e:  # an extra layer failing must never break the site
+            import traceback; traceback.print_exc()
+            print(f"::warning::{step} step failed ({e}); the rest of the site is unaffected.")
+    for w in data["works"]:
+        w.pop("kw", None)
+        w.pop("field", None)
+
+
 def update_history(data: dict, path: Path) -> list:
     hist = json.loads(path.read_text()) if path.exists() else []
     month = data["generated_at"][:7]
@@ -839,6 +871,8 @@ def main():
                 oa_cache.setdefault("citing", {**citing, "checked": "2000-01-01"})
     if citing:
         data["citing"] = citing
+    enrich_data(data, raw, cfg, Path(args.config).parent / "venues.yaml", Path(args.scholar_cache).parent,
+                oa_cache, key, online=not args.from_raw)
     if not args.from_raw:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cache_path.write_text(json.dumps(oa_cache, separators=(",", ":"), ensure_ascii=False))

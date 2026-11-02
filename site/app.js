@@ -47,12 +47,13 @@
   // ------------------------------------------------------------ routing
   function route() {
     const [tab, arg] = (location.hash.slice(1) || "overview").split("/");
-    const t = ["overview", "member", "network", "venues", "papers"].includes(tab) ? tab : "overview";
+    const t0 = tab === "network" ? "analytics" : tab;   // old links keep working
+    const t = ["overview", "member", "analytics", "venues", "papers"].includes(t0) ? t0 : "overview";
     document.querySelectorAll(".tab").forEach((s) => (s.hidden = s.id !== `tab-${t}`));
     document.querySelectorAll("#tabs a").forEach((a) => a.classList.toggle("on", a.dataset.tab === t));
     if (t === "overview" && !rendered.overview) renderOverview();
     if (t === "member") renderMember(arg ? decodeURIComponent(arg) : null);
-    if (t === "network") renderNetwork(arg ? decodeURIComponent(arg) : null);
+    if (t === "analytics") { renderNetwork(arg ? decodeURIComponent(arg) : null); renderSankey(); }
     else NET?.pause();
     if (t === "venues" && !rendered.venues) renderVenues();
     if (t === "papers" && !rendered.papers) renderPapers();
@@ -173,26 +174,34 @@
       $("#history-card").hidden = false;
       chart("c-history", "line", H.map((h) => h.date), H.map((h) => h.lab.citations), { unit: "citations" });
     }
+    const kinds = {};
+    D.works.forEach((w) => w.lab.forEach((sl) => { const k = (kinds[sl] ||= {}); k[w.kind] = (k[w.kind] || 0) + 1; }));
+    const kindN = (m, k) => (kinds[m.slug] || {})[k] || 0;
+    const y3 = `’${String(THIS_YEAR - 2).slice(2)}–’${String(THIS_YEAR).slice(2)}`;
     const cols = [
-      { key: "name", label: "Name", html: (m) => `<a href="#member/${m.slug}">${esc(m.name)}</a> ${m.source === "Google Scholar" ? '<span class="tag" title="Numbers from Google Scholar">GS</span>' : ""} ${m.active ? "" : '<span class="tag alum">alumni</span>'}<div class="sub">${esc(m.role || "")}</div>` },
+      { key: "name", label: "Name", html: (m) => `<a href="#member/${m.slug}">${esc(m.name)}</a> ${m.source === "Google Scholar" ? '<span class="tag" title="Numbers from Google Scholar">GS</span>' : ""}<div class="sub">${esc(m.role || "")}</div>` },
       { key: "works", label: "Papers", num: true, html: (m) => fmt(m.works) },
+      { key: "jn", label: "Journal", num: true, val: (m) => kindN(m, "Journal"), html: (m) => `<span title="Journal papers (OpenAlex plus papers only on Google Scholar), types checked against venues.yaml">${fmt(kindN(m, "Journal"))}</span>` },
+      { key: "cf", label: "Conf.", num: true, val: (m) => kindN(m, "Conference"), html: (m) => `<span title="Conference papers (OpenAlex plus papers only on Google Scholar), types checked against venues.yaml">${fmt(kindN(m, "Conference"))}</span>` },
       { key: "citations", label: "Citations", num: true, html: (m) => fmt(m.citations) },
       { key: "h", label: "h-index", num: true },
       { key: "i10", label: "i10", num: true },
-      { key: "c_last", label: `${LAST_YEAR}`, num: true, val: (m) => momentum(m.cites_by_year).last, html: (m) => fmt(momentum(m.cites_by_year).last) },
-      { key: "c_now", label: `${THIS_YEAR} so far`, num: true, val: (m) => momentum(m.cites_by_year).now, html: (m) => fmt(momentum(m.cites_by_year).now) },
-      { key: "pace", label: "Pace", num: true, val: (m) => momentum(m.cites_by_year).pace ?? -1e9, html: (m) => paceHtml(momentum(m.cites_by_year)) || "–" },
+      { key: "p3", label: `Papers ${y3}`, num: true, val: (m) => last3(m.pubs_by_year), html: (m) => fmt(last3(m.pubs_by_year)) },
+      { key: "c3", label: `Cites ${y3}`, num: true, val: (m) => last3(m.cites_by_year), html: (m) => fmt(last3(m.cites_by_year)) },
+      { key: "pace", label: "Pace", num: true, val: (m) => momentum(m.cites_by_year).pace ?? -1e9,
+        html: (m) => { const k = momentum(m.cites_by_year); return `<span title="${fmt(k.last)} citations in ${LAST_YEAR}, ${fmt(k.now)} so far in ${THIS_YEAR}">${paceHtml(k) || "–"}</span>`; } },
       { key: "next", label: "To next h", num: true, val: (m) => -(m.h_watch.citations_needed || 999),
         html: (m) => !m.works ? "–" : m.h_watch.papers.length < m.h_watch.papers_needed
           ? `<span class="muted" title="Needs another paper: h=${m.h_watch.target} takes ${m.h_watch.target} papers">new paper</span>`
           : `<span title="${m.h_watch.papers_needed} paper(s) need ${m.h_watch.citations_needed} more citations to reach h=${m.h_watch.target}">${m.h_watch.citations_needed} cite${m.h_watch.citations_needed === 1 ? "" : "s"}</span>` },
     ];
-    const visible = () => D.members.filter((m) => m.active || $("#show-alumni").checked);
-    const t = table($("#members-table"), cols, visible(), { sort: "citations", onClick: (m) => (location.hash = `member/${m.slug}`) });
-    $("#show-alumni").onchange = () => { t.update(visible()); renderHeatmap(); };
+    table($("#members-table"), cols, D.members, { sort: "c3", onClick: (m) => (location.hash = `member/${m.slug}`) });
+    renderThemes();
     renderHeatmap();
     renderMap();
   }
+
+  function last3(by) { return [0, 1, 2].reduce((t, i) => t + ((by || {})[String(THIS_YEAR - i)] || 0), 0); }
 
   // ------------------------------------------------------------ this year so far
   function renderThisYear(mo) {
@@ -225,6 +234,180 @@
     kpis($("#year-kpis"), items);
   }
 
+  // ------------------------------------------------------------ themes: what the group works on
+  // Size and order = how many members work on a theme (so the biggest words are where the group as a
+  // whole works); only themes at least two members share; each paper counts once.
+  function renderThemes() {
+    const TH = D.themes;
+    if (!TH || !TH.items?.length || !window.d3 || !d3.layout?.cloud) return;
+    $("#themes-card").hidden = false;
+    const T = TH.items.map((t) => ({ ...t, w: t.m.length })).sort((a, b) => b.w - a.w || b.n - a.n);
+    const shared = T.filter((t) => t.w >= 2);
+    const words = (shared.length >= 12 ? shared : T).slice(0, 45);
+    $("#themes-note").textContent = `Themes in the team's papers, ${TH.from}–${TH.to}. Bigger = more members working on it; ` +
+      `${shared.length >= 12 ? "showing themes at least two members share; " : ""}each paper counts once.` +
+      (TH.source === "titles" ? " Built from paper titles until OpenAlex keywords arrive with the next run." : "");
+    // colour by research field when known (top 4 fields get the categorical slots, the rest grey)
+    const fieldCount = d3.rollup(words.filter((t) => t.field), (v) => v.length, (t) => t.field);
+    const fields = [...fieldCount].sort((a, b) => b[1] - a[1]).map(([f]) => f).slice(0, 4);
+    const byField = fields.length >= 2;
+    const slot = (f) => (fields.indexOf(f) >= 0 ? `--s${fields.indexOf(f) + 1}` : "--s0");
+    const shade = d3.scaleQuantize().domain(d3.extent(words, (t) => t.w)).range(["--w1", "--w2", "--w3", "--w4", "--w5"]);
+    const colour = (t) => css(byField ? slot(t.field) : shade(t.w));
+    $("#cloud-legend").innerHTML = byField ? fields.map((f, i) => `<span><i class="sw" style="background:var(--s${i + 1})"></i>${esc(f)}</span>`).join("") + `<span><i class="sw" style="background:var(--s0)"></i>Other fields</span>` : "";
+    const top = T.slice(0, 10), max = top[0].w;
+    $("#top10").innerHTML = top.map((t, i) => `<li data-k="${esc(t.k)}" title="${esc(t.m.map((s) => members[s]?.name || s).join(", "))}"><span class="r">${i + 1}</span><span class="nm">${esc(t.label)}</span><span class="n">${t.w}</span>
+      <span class="bar"><span style="width:${(100 * t.w) / max}%"></span></span><span class="sub">${t.w} member${t.w === 1 ? "" : "s"} · ${t.n} paper${t.n === 1 ? "" : "s"}</span></li>`).join("");
+    const host = $("#cloud"); host.innerHTML = "";
+    const W = host.clientWidth || 800, H = host.clientHeight || 400;
+    const size = d3.scaleSqrt().domain(d3.extent(words, (t) => t.w)).range(W < 500 ? [13, 38] : [16, 68]);
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const FONT = "system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+    d3.layout.cloud().size([W, H]).words(words.map((t) => ({ ...t, text: t.label, size: size(t.w) })))
+      .padding(3).rotate(0).font(FONT).fontWeight((d) => (d.w >= 3 ? 650 : 500)).fontSize((d) => d.size)
+      .spiral("archimedean").random(rnd).on("end", draw).start();
+    const tipEl = $("#tooltip");
+    function draw(placed) {
+      const svg = d3.select(host).append("svg").attr("viewBox", [-W / 2, -H / 2, W, H]).attr("role", "img").attr("aria-label", "Word cloud of the team's research themes");
+      const sel = svg.selectAll("text").data(placed).join("text").attr("text-anchor", "middle").style("font-family", FONT)
+        .attr("font-weight", (d) => (d.w >= 3 ? 650 : 500)).style("font-size", (d) => d.size + "px").style("fill", colour)
+        .attr("transform", "scale(0.2)").style("opacity", 0).text((d) => d.text);
+      sel.transition().delay((d, i) => i * 30).duration(700).ease(d3.easeCubicOut).attr("transform", (d) => `translate(${d.x},${d.y})`).style("opacity", 1);
+      const focus = (k) => { sel.classed("dim", (d) => k && d.k !== k); document.querySelectorAll("#top10 li").forEach((li) => li.classList.toggle("hot", li.dataset.k === k)); };
+      sel.on("mousemove", (ev, d) => {
+        focus(d.k); tipEl.hidden = false;
+        const names = d.m.map((s) => members[s]?.name || s);
+        tipEl.innerHTML = `<b>${esc(d.label)}</b><br>${d.w} member${d.w === 1 ? "" : "s"} · ${d.n} paper${d.n === 1 ? "" : "s"}${d.field ? ` · ${esc(d.field)}` : ""}<br><span style="opacity:.8">${esc(names.slice(0, 6).join(", "))}${names.length > 6 ? ` +${names.length - 6}` : ""}</span>`;
+        tipEl.style.left = `${Math.min(ev.clientX + 14, innerWidth - 300)}px`; tipEl.style.top = `${ev.clientY + 14}px`;
+      }).on("mouseleave", () => { focus(null); tipEl.hidden = true; }).on("click", (ev, d) => papers(d));
+      document.querySelectorAll("#top10 li").forEach((li) => {
+        const t = T.find((x) => x.k === li.dataset.k);
+        li.onmouseenter = () => focus(t.k); li.onmouseleave = () => focus(null); li.onclick = () => papers(t);
+      });
+    }
+    function papers(t) {
+      const el = $("#cloud-papers"); el.hidden = false;
+      el.innerHTML = `<h3>${esc(t.label)} — ${t.n} paper${t.n === 1 ? "" : "s"}, ${t.w} member${t.w === 1 ? "" : "s"}</h3><ul>${t.p.map((i) => { const p = TH.papers[i];
+        return `<li>${paperLink({ title: p.t, link: p.u })} <span class="muted">(${p.y}) · ${esc(p.m.map((s) => members[s]?.name || s).join(", "))}</span></li>`; }).join("")}</ul>`;
+      el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }
+
+  // ------------------------------------------------------------ Sankey: where the work goes
+  // Type of output -> venue quality tier -> venue, for the whole team or the person picked above.
+  const KIND_COL = { "Journal": "--s1", "Conference": "--s2", "Book / chapter": "--s3", "Preprint / repository": "--s4", "Other": "--s0" };
+  const KINDS = ["Journal", "Conference", "Book / chapter", "Preprint / repository", "Other"];
+  let skMetric = "n", skInit = false;
+  function renderSankey() {
+    if (!window.d3 || !d3.sankey || !D.venues) { $("#sankey-card").hidden = true; return; }
+    const years = [...new Set(D.works.map((w) => w.year).filter(Boolean))].sort((a, b) => a - b);
+    if (!skInit) {
+      skInit = true;
+      $("#sk-from").innerHTML = years.map((y) => `<option>${y}</option>`).join("");
+      $("#sk-to").innerHTML = years.slice().reverse().map((y) => `<option>${y}</option>`).join("");
+      $("#sk-from").value = Math.max(years[0], THIS_YEAR - 4); $("#sk-to").value = THIS_YEAR;
+      $("#sk-from").onchange = $("#sk-to").onchange = () => drawSankey(true);
+      document.querySelectorAll("#sk-metric button").forEach((b) => (b.onclick = () => {
+        skMetric = b.dataset.m; document.querySelectorAll("#sk-metric button").forEach((x) => x.classList.toggle("on", x === b)); drawSankey(true);
+      }));
+      $("#sk-legend").innerHTML = KINDS.slice(0, 4).map((k) => `<span><i class="sw" style="background:var(${KIND_COL[k]})"></i>${k}</span>`).join("") + `<span class="muted">Flows are coloured by type of output</span>`;
+    }
+    drawSankey(false);
+  }
+  function drawSankey(animate) {
+    const host = $("#sankey");
+    const sel = $("#net-member").value, mem = members[sel] ? sel : "";
+    $("#sk-title").textContent = mem ? `Where ${members[mem].name.split(" ")[0]}'s work goes` : "Where the team's work goes";
+    const from = Math.min(+$("#sk-from").value, +$("#sk-to").value), to = Math.max(+$("#sk-from").value, +$("#sk-to").value);
+    const cites = (w) => (w.gs_c ?? w.cited_by_count) || 0;
+    const val = (w) => (skMetric === "n" ? 1 : cites(w));
+    const ws = D.works.filter((w) => w.year >= from && w.year <= to && (!mem || w.lab.includes(mem)) && val(w) > 0);
+    const TIERS = D.tier_order || [];
+    const byVenue = d3.rollup(ws.filter((w) => w.vkey), (v) => d3.sum(v, val), (w) => w.vkey);
+    const topV = new Set([...byVenue].sort((a, b) => b[1] - a[1]).slice(0, 15).map(([v]) => v));
+    const OTHER = { "Journal": "Other journals", "Conference": "Other conferences", "Book / chapter": "Other books", "Preprint / repository": "Other preprints", "Other": "Other outputs " };
+    const nodes = new Map(), links = new Map();
+    for (const w of ws) {
+      const k = w.kind || "Other", tier = w.tier || "Other outputs";
+      const vk = w.vkey && topV.has(w.vkey) ? "v:" + w.vkey : "v:" + OTHER[k];
+      if (!nodes.has("t:" + k)) nodes.set("t:" + k, { id: "t:" + k, name: k, col: 0, kind: k, order: KINDS.indexOf(k) });
+      if (!nodes.has("r:" + tier)) nodes.set("r:" + tier, { id: "r:" + tier, name: tier, col: 1, kind: k, order: TIERS.indexOf(tier) });
+      if (!nodes.has(vk)) {
+        const v = D.venues[w.vkey] || {};
+        nodes.set(vk, { id: vk, name: vk.slice(2), col: 2, kind: k, other: !topV.has(w.vkey), tierIdx: TIERS.indexOf(tier),
+          verified: !!v.verified || !topV.has(w.vkey), info: topV.has(w.vkey) ? v : null });
+      }
+      for (const [s, t] of [["t:" + k, "r:" + tier], ["r:" + tier, vk]]) {
+        const key = s + "→" + t, l = links.get(key) || { key, source: s, target: t, value: 0, kind: k, works: [] };
+        l.value += val(w); l.works.push(w); links.set(key, l);
+      }
+    }
+    const vSize = new Map(); links.forEach((l) => l.target.startsWith("v:") && vSize.set(l.target, (vSize.get(l.target) || 0) + l.value));
+    [...nodes.values()].filter((n) => n.col === 2)
+      .sort((a, b) => KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind) || a.other - b.other || a.tierIdx - b.tierIdx || vSize.get(b.id) - vSize.get(a.id))
+      .forEach((n, i) => (n.order = i));
+    // footnote: how much of what's shown rests on venues nobody has checked yet
+    const unv = ws.filter((w) => w.vkey && !(D.venues[w.vkey] || {}).verified);
+    const nUnvVenues = new Set(unv.map((w) => w.vkey)).size;
+    $("#sk-foot").innerHTML = ws.length ? `${fmt(ws.length)} paper${ws.length === 1 ? "" : "s"}, ${from === to ? from : `${from}–${to}`}. ` +
+      (unv.length ? `Hollow blocks: ${fmt(unv.length)} of them are in ${fmt(nUnvVenues)} venue${nUnvVenues === 1 ? "" : "s"} not yet reviewed in venues.yaml, so their type and tier are automatic.` : "All venues shown have been reviewed in venues.yaml.") +
+      ` Ranks: SCImago quartiles for journals, ICORE for conferences.` : "No papers in this range.";
+    $("#sk-unit").textContent = skMetric === "n" ? "papers" : "citations (Google Scholar where available)";
+    const width = Math.max(760, host.clientWidth || 0), height = Math.max(320, Math.min(620, 160 + nodes.size * 16)), M = { t: 26, r: 300, b: 8, l: 4 };
+    let svg = d3.select(host).select("svg");
+    if (svg.empty() || +svg.attr("data-w") !== width) {
+      host.innerHTML = "";
+      svg = d3.select(host).append("svg").attr("data-w", width);
+      svg.append("g").attr("class", "heads");
+      svg.append("g").attr("class", "links"); svg.append("g").attr("class", "nodes");
+    }
+    svg.attr("viewBox", [0, 0, width, height]);
+    svg.select(".heads").selectAll("text").data([["Type", M.l, "start"], ["Quality tier", (width - M.r) / 2, "middle"], ["Venue", width - M.r, "end"]])
+      .join("text").attr("class", "colhead").attr("x", (d) => d[1]).attr("y", 14).attr("text-anchor", (d) => d[2]).text((d) => d[0]);
+    if (!links.size) { svg.select(".links").selectAll("*").remove(); svg.select(".nodes").selectAll("*").remove(); return; }
+    const layout = d3.sankey().nodeId((d) => d.id).nodeWidth(12).nodePadding(9).nodeAlign(d3.sankeyJustify)
+      .extent([[M.l, M.t], [width - M.r, height - M.b]]).nodeSort((a, b) => a.order - b.order);
+    const G = layout({ nodes: [...nodes.values()].map((d) => ({ ...d })), links: [...links.values()].map((d) => ({ ...d })) });
+    const total = d3.sum(ws, val), unit = skMetric === "n" ? "paper" : "citation";
+    const T = d3.transition().duration(animate ? 650 : 0).ease(d3.easeCubicInOut);
+    const path = d3.sankeyLinkHorizontal();
+    const ls = svg.select(".links").selectAll("path").data(G.links, (d) => d.key).join(
+      (en) => en.append("path").attr("class", "link").attr("d", path).attr("stroke-width", 0),
+      (up) => up, (ex) => ex.transition(T).attr("stroke-width", 0).remove());
+    ls.style("stroke", (d) => css(KIND_COL[d.kind])).transition(T).attr("d", path).attr("stroke-width", (d) => Math.max(1, d.width));
+    const ns = svg.select(".nodes").selectAll("g.node").data(G.nodes, (d) => d.id).join(
+      (en) => { const e = en.append("g").attr("class", "node").style("opacity", 0); e.append("rect"); e.append("text"); return e; },
+      (up) => up, (ex) => ex.transition(T).style("opacity", 0).remove());
+    ns.transition(T).style("opacity", 1);
+    ns.classed("uv", (d) => d.col === 2 && !d.verified);
+    ns.select("rect").style("fill", (d) => (d.col === 0 ? css(KIND_COL[d.kind]) : css("--text-2")))
+      .transition(T).attr("x", (d) => d.x0).attr("y", (d) => d.y0).attr("width", (d) => d.x1 - d.x0).attr("height", (d) => Math.max(1, d.y1 - d.y0));
+    ns.select("text").attr("dy", "0.35em")
+      .html((d) => `${esc(d.name.length > 44 ? d.name.slice(0, 42) + "…" : d.name)} <tspan class="v">${fmt(Math.round(d.value))}</tspan>`)
+      .transition(T).attr("x", (d) => d.x1 + 6).attr("y", (d) => (d.y0 + d.y1) / 2);
+    const tipEl = $("#tooltip");
+    const showTip = (ev, html) => { tipEl.hidden = false; tipEl.innerHTML = html; tipEl.style.left = `${Math.min(ev.clientX + 14, innerWidth - 310)}px`; tipEl.style.top = `${ev.clientY + 14}px`; };
+    const related = (d) => { const s = new Set([d.id]);
+      const up = (n) => n.targetLinks.forEach((l) => { s.add(l.key); s.add(l.source.id); up(l.source); });
+      const down = (n) => n.sourceLinks.forEach((l) => { s.add(l.key); s.add(l.target.id); down(l.target); }); up(d); down(d); return s; };
+    const hl = (set) => { ls.classed("hot", (l) => set && set.has(l.key)).classed("dim", (l) => set && !set.has(l.key)); ns.classed("dim", (n) => set && !set.has(n.id)); };
+    const venueInfo = (d) => { const v = d.info; if (!v) return "";
+      return `<br>${esc(v.kind)}${v.rank ? ` · ${esc(v.rank)} (${esc(v.src || "")})` : " · unranked"}${v.impact ? ` · impact ${v.impact}` : ""}${v.verified ? "" : "<br><i>Not verified in venues.yaml yet</i>"}`; };
+    ns.on("mousemove", (ev, d) => { hl(related(d)); showTip(ev, `<b>${esc(d.name)}</b><br>${fmt(Math.round(d.value))} ${unit}${Math.round(d.value) === 1 ? "" : "s"} · ${Math.round((100 * d.value) / total)}% of total${venueInfo(d)}`); })
+      .on("mouseleave", () => { hl(null); tipEl.hidden = true; })
+      .on("click", (ev, d) => skList(d.name, [...new Map([...d.targetLinks, ...d.sourceLinks].flatMap((l) => l.works).map((w) => [w.id, w])).values()]));
+    ls.on("mousemove", (ev, d) => { hl(new Set([d.key, d.source.id, d.target.id])); showTip(ev, `<b>${esc(d.source.name)} → ${esc(d.target.name)}</b><br>${fmt(Math.round(d.value))} ${unit}${Math.round(d.value) === 1 ? "" : "s"}`); })
+      .on("mouseleave", () => { hl(null); tipEl.hidden = true; }).on("click", (ev, d) => skList(`${d.source.name} → ${d.target.name}`, d.works));
+  }
+  function skList(title, ws) {
+    const el = $("#sk-papers"); el.hidden = false;
+    const c = (w) => (w.gs_c ?? w.cited_by_count) || 0;
+    ws = ws.slice().sort((a, b) => c(b) - c(a) || b.year - a.year);
+    el.innerHTML = `<h3>${esc(title)} — ${ws.length} paper${ws.length === 1 ? "" : "s"}</h3><ul>${ws.slice(0, 40).map((w) =>
+      `<li>${paperLink(w)} <span class="muted">(${w.year}) · ${esc(w.venue || "")} · ${fmt(c(w))} citation${c(w) === 1 ? "" : "s"}</span></li>`).join("")}</ul>${ws.length > 40 ? `<p class="note">+ ${ws.length - 40} more</p>` : ""}`;
+    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
   // ------------------------------------------------------------ shared colour ramp (one hue, light -> dark)
   function ramp() {
     const dark = document.documentElement.dataset.theme === "dark" ||
@@ -234,7 +417,7 @@
   }
 
   // ------------------------------------------------------------ heatmap: members x years
-  let heatMetric = "pubs", heatSort = "first";
+  let heatMetric = "pubs", heatSort = "recent";
   const total = (m, k) => Object.values(m[k] || {}).reduce((a, b) => a + b, 0);
   const heatSorts = {
     first: (a, b) => (a.first_year || 9999) - (b.first_year || 9999) || a.name.localeCompare(b.name),
@@ -247,7 +430,7 @@
     const el = $("#heatmap");
     if (!window.d3) return;
     const key = heatMetric === "pubs" ? "pubs_by_year" : "cites_by_year";
-    const ms = D.members.filter((m) => m.active || $("#show-alumni").checked)
+    const ms = D.members.slice()
       .sort(heatSorts[heatSort]);
     const first = Math.min(...ms.flatMap((m) => Object.keys(m[key] || {}).map(Number)).filter((y) => y > 1900), THIS_YEAR);
     const START = Math.max(first, THIS_YEAR - 19);
@@ -406,7 +589,9 @@
     const py = Object.keys(m.pubs_by_year).map(Number);
     const pyrs = py.length ? range(Math.min(...py), THIS_YEAR) : [THIS_YEAR];
     chart("c-m-pubs", "bar", yearLabels(pyrs), fillYears(m.pubs_by_year, pyrs), { unit: "papers" });
-    hbars($("#m-venues"), m.venues, 8);
+    const mv = {};
+    D.works.filter((w) => w.lab.includes(m.slug) && w.vkey).forEach((w) => { const x = (mv[w.vkey] ||= { name: w.vkey, type: w.kind, count: 0 }); x.count++; });
+    hbars($("#m-venues"), Object.values(mv).length ? Object.values(mv).sort((a, b) => b.count - a.count) : m.venues, 8);
 
     const collab = Object.entries(m.collab_lab);
     $("#m-collab").innerHTML = collab.length
@@ -424,7 +609,7 @@
       const mine = D.works.filter((w) => w.lab.includes(m.slug));
       table($("#m-papers"), paperCols(), mine, { sort: "cited_by_count", limit: 25 });
     }
-    $("#m-net-link").href = `#network/${m.slug}`;
+    $("#m-net-link").href = `#analytics/${m.slug}`;
   }
 
   function paperLink(p) {
@@ -497,7 +682,7 @@
       const sorted = D.members.slice().sort((a, b) => b.active - a.active || a.name.localeCompare(b.name));
       sel.innerHTML = `<option value="team">Whole team — who works with whom</option><optgroup label="One person and their co-authors">` +
         sorted.map((m) => `<option value="${m.slug}">${esc(m.name)}${m.active ? "" : " (alumni)"}</option>`).join("") + "</optgroup>";
-      sel.onchange = () => (location.hash = `network/${sel.value}`);
+      sel.onchange = () => (location.hash = `analytics/${sel.value}`);
     }
     const key = slug === "team" || (!slug && !members[sel.value]) ? "team" : (members[slug] ? slug : sel.value);
     sel.value = key;
@@ -506,10 +691,17 @@
     if (!window.d3) { $("#network").innerHTML = `<p class="empty" style="padding:16px">Network library failed to load.</p>`; return; }
     $("#net-min-wrap").hidden = key === "team";
     $("#net-hint").textContent = key === "team"
-      ? "Each circle is a team member (size = papers); lines join members who have published together, thicker with more joint papers. Members on the outer ring haven't co-authored within the team yet. Swipe sideways (or drag the slider) to move through the years · pinch to zoom · drag to pan."
-      : "Circles sit closer and grow larger the more papers someone shares with the selected person; lines thicken with papers written together. Swipe sideways (or drag the slider) to move through the years · pinch to zoom · drag to pan.";
-    $(".legend").hidden = key === "team";
+      ? "Each circle is a team member (size = papers); lines join members who have published together, thicker with more joint papers. Members on the outer ring haven't co-authored within the team yet. Drag circles to rearrange them; they stay where you drop them (double-click one to release it, ↺ to reset). Swipe sideways or use the slider to move through the years · pinch to zoom · drag the background to pan."
+      : "Circles sit closer and grow larger the more papers someone shares with the selected person; lines thicken with papers written together. Drag circles to rearrange them; they stay where you drop them (double-click one to release it, ↺ to reset). Swipe sideways or use the slider to move through the years · pinch to zoom · drag the background to pan.";
+    $(".net-card .legend").hidden = key === "team";
     NET = key === "team" ? teamNetwork() : egoNetwork(members[key]);
+  }
+
+  // ------------------------------------------------------------ moved circles stay put (per viewer)
+  const PIN_KEY = "lab-dashboard-pins";
+  function loadPins(view) { try { return JSON.parse(localStorage.getItem(PIN_KEY) || "{}")[view] || {}; } catch { return {}; } }
+  function savePins(view, pins) {
+    try { const all = JSON.parse(localStorage.getItem(PIN_KEY) || "{}"); all[view] = pins; localStorage.setItem(PIN_KEY, JSON.stringify(all)); } catch { /* storage unavailable */ }
   }
 
   // ------------------------------------------------------------ team network: members only
@@ -559,6 +751,7 @@
     const labelG = world.append("g").attr("class", "labels");
     const state = new Map();
     let nodes = [], links = [], year = THIS_YEAR, timer = null, hover = null, selected = null, paused = false, dragging = false;
+    const pins = loadPins("team");
 
     const sim = d3.forceSimulation()
       .force("charge", d3.forceManyBody().strength(-260).distanceMax(400))
@@ -589,7 +782,9 @@
         const n = cumY(yrsOf[m.slug], upto);
         if (n < 1 && !final) continue;
         let d = state.get(m.slug);
-        if (!d) { const a = Math.random() * 6.28; d = { id: m.slug, label: m.name, active: m.active, phase: Math.random() * 6.28, x: Math.cos(a) * 30, y: Math.sin(a) * 30 }; state.set(m.slug, d); }
+        if (!d) { const a = Math.random() * 6.28; d = { id: m.slug, label: m.name, active: m.active, phase: Math.random() * 6.28, x: Math.cos(a) * 30, y: Math.sin(a) * 30 };
+          if (pins[m.slug]) { [d.fx, d.fy] = pins[m.slug]; d.x = d.fx; d.y = d.fy; }
+          state.set(m.slug, d); }
         if (!d.on) { d.born = true; fresh++; }
         d.on = true; d.n = n; d.r = rad(Math.max(n, 1)); d.deg = 0;
         vis.push(d);
@@ -626,9 +821,12 @@
       nodeSel.on("mouseenter", (ev, d) => { hover = d; tip(d, ev); dim(); }).on("mousemove", (ev, d) => tip(d, ev))
         .on("mouseleave", () => { hover = null; $("#tooltip").hidden = true; dim(); })
         .on("click", (ev, d) => { ev.stopPropagation(); selected = d.id; side(d.id); dim(); })
+        .on("dblclick", (ev, d) => { ev.stopPropagation(); d.fx = d.fy = null; delete pins[d.id]; savePins("team", pins); nodeSel.classed("pinned", (n) => !!pins[n.id]); sim.alpha(0.3).restart(); })
         .call(d3.drag().on("start", (ev, d) => { dragging = true; if (!ev.active) sim.alphaTarget(0.2).restart(); d.fx = d.x; d.fy = d.y; })
           .on("drag", (ev, d) => { d.fx = ev.x; d.fy = ev.y; })
-          .on("end", (ev, d) => { dragging = false; if (!ev.active) sim.alphaTarget(reduce ? 0 : 0.01); d.fx = null; d.fy = null; }));
+          .on("end", (ev, d) => { dragging = false; if (!ev.active) sim.alphaTarget(reduce ? 0 : 0.01);
+            pins[d.id] = [Math.round(d.fx), Math.round(d.fy)]; savePins("team", pins); nodeSel.classed("pinned", (n) => !!pins[n.id]); }));
+      nodeSel.classed("pinned", (n) => !!pins[n.id]);
       linkSel.on("mousemove", (ev, l) => {
         const t = $("#tooltip"); t.hidden = false;
         t.innerHTML = `<b>${esc(l.source.label)} & ${esc(l.target.label)}</b><br>${l.w} joint paper${l.w === 1 ? "" : "s"}${final ? "" : ` by ${upto}`}`;
@@ -666,7 +864,7 @@
       const mine = E.filter((e) => e.a === id || e.b === id).sort((x, y) => y.w - x.w);
       $("#net-info").innerHTML = `<h3>${esc(m.name)}</h3>
         <p class="muted" style="margin:0 0 8px;font-size:13px">${esc(m.role || "")} · ${mine.length} team partner${mine.length === 1 ? "" : "s"}</p>
-        <p style="margin:0 0 8px"><a href="#network/${id}">See ${esc(m.name.split(" ")[0])}'s full network →</a></p>
+        <p style="margin:0 0 8px"><a href="#analytics/${id}">See ${esc(m.name.split(" ")[0])}'s full network →</a></p>
         ${mine.map((e) => { const o = members[e.a === id ? e.b : e.a]; return `<b style="font-size:13px">${esc(o.name)} — ${e.w}</b><ul>${e.works.slice().sort((a, b) => (b.year || 0) - (a.year || 0)).slice(0, 4).map((w) => `<li>${paperLink(w)} <span class="muted">(${w.year || "n.d."})</span></li>`).join("")}</ul>`; }).join("") || `<p class="empty">No joint papers with the team yet.</p>`}
         <p style="font-size:12px"><a href="#" id="net-back">← Whole team</a></p>`;
       $("#net-back").onclick = (e) => { e.preventDefault(); selected = null; dim(); side(null); };
@@ -692,9 +890,10 @@
     $("#net-zoom-in").onclick = () => svg.transition().duration(300).call(zoom.scaleBy, 1.35);
     $("#net-zoom-out").onclick = () => svg.transition().duration(300).call(zoom.scaleBy, 1 / 1.35);
     $("#net-fit").onclick = () => svg.transition().duration(500).call(zoom.transform, fit());
+    $("#net-unpin").onclick = () => { for (const k in pins) delete pins[k]; savePins("team", pins); state.forEach((d) => (d.fx = d.fy = null)); nodeSel.classed("pinned", false); sim.alpha(0.8).restart(); };
     const slider = $("#net-year"), playBtn = $("#net-play");
     slider.min = FIRST; slider.max = THIS_YEAR; slider.value = THIS_YEAR;
-    $(".timeline").hidden = FIRST >= THIS_YEAR;
+    $(".net-card .timeline").hidden = FIRST >= THIS_YEAR;
     function stop(label = "▶ Play") { clearInterval(timer); timer = null; playBtn.textContent = label; }
     playBtn.onclick = () => {
       if (timer) { stop(); return; }
@@ -775,6 +974,7 @@
 
     // ---- nodes kept across years so they glide instead of jumping
     const egoNode = { id: m.slug, label: m.name, ego: true, fx: 0, fy: 0, x: 0, y: 0, r: EGO_R, n: 0 };
+    const pinView = "ego:" + m.slug, pins = loadPins(pinView);
     const state = new Map([[m.slug, egoNode]]);
     let nodes = [egoNode], links = [], year = THIS_YEAR, timer = null, hover = null, selected = null;
 
@@ -802,7 +1002,7 @@
     // slow rotation of the whole constellation while idle
     const spinTimer = reduce ? null : d3.timer((ms) => {
       const now = performance.now(), dt = now - t0; t0 = now;
-      if (!paused && !hover && !timer && !heavy() && !dragging) { angle = (angle + dt * 0.0016) % 360; spin.attr("transform", `rotate(${angle})`); ticked(); }
+      if (!paused && !hover && !timer && !heavy() && !dragging && !Object.keys(pins).length) { angle = (angle + dt * 0.0016) % 360; spin.attr("transform", `rotate(${angle})`); ticked(); }
     });
     if (!reduce) sim.alphaTarget(0.012);
 
@@ -822,6 +1022,7 @@
         if (!d) {
           const a = Math.random() * 2 * Math.PI;
           d = { ...p, phase: Math.random() * 6.28, x: Math.cos(a) * 20, y: Math.sin(a) * 20, vx: Math.cos(a) * 6, vy: Math.sin(a) * 6 };
+          if (pins[p.id]) { [d.fx, d.fy] = pins[p.id]; }
           state.set(p.id, d);
         }
         if (!d.on) { d.born = true; fresh++; }
@@ -875,7 +1076,11 @@
         .call(d3.drag().filter((ev) => !ev.button)
           .on("start", (ev, d) => { dragging = true; if (!ev.active) sim.alphaTarget(0.2).restart(); if (!d.ego) { d.fx = d.x; d.fy = d.y; } })
           .on("drag", (ev, d) => { if (!d.ego) { d.fx = ev.x; d.fy = ev.y; } })
-          .on("end", (ev, d) => { dragging = false; if (!ev.active) sim.alphaTarget(reduce ? 0 : 0.012); if (!d.ego) { d.fx = null; d.fy = null; } }));
+          .on("end", (ev, d) => { dragging = false; if (!ev.active) sim.alphaTarget(reduce ? 0 : 0.012);
+            if (!d.ego) { pins[d.id] = [Math.round(d.fx), Math.round(d.fy)]; savePins(pinView, pins); nodeSel.classed("pinned", (n) => !!pins[n.id]); } }));
+      nodeSel.on("dblclick", (ev, d) => { ev.stopPropagation(); if (d.ego) return; d.fx = d.fy = null; delete pins[d.id]; savePins(pinView, pins);
+        nodeSel.classed("pinned", (n) => !!pins[n.id]); sim.alpha(0.3).restart(); });
+      nodeSel.classed("pinned", (n) => !!pins[n.id]);
 
       sim.nodes(nodes);
       sim.force("link").links(links);
@@ -934,11 +1139,12 @@
     $("#net-zoom-in").onclick = () => svg.transition().duration(300).call(zoom.scaleBy, 1.35);
     $("#net-zoom-out").onclick = () => svg.transition().duration(300).call(zoom.scaleBy, 1 / 1.35);
     $("#net-fit").onclick = () => svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity.scale(fitScale()));
+    $("#net-unpin").onclick = () => { for (const k in pins) delete pins[k]; savePins(pinView, pins); state.forEach((d) => { if (!d.ego) d.fx = d.fy = null; }); nodeSel.classed("pinned", false); sim.alpha(0.8).restart(); };
 
     // ---- timeline
     const slider = $("#net-year"), playBtn = $("#net-play");
     slider.min = FIRST; slider.max = THIS_YEAR; slider.value = THIS_YEAR;
-    $(".timeline").hidden = FIRST >= THIS_YEAR;
+    $(".net-card .timeline").hidden = FIRST >= THIS_YEAR;
     function stop(label = "▶ Play") { clearInterval(timer); timer = null; playBtn.textContent = label; }
     playBtn.onclick = () => {
       if (timer) { stop(); return; }
@@ -969,7 +1175,7 @@
       const ws = p.works.slice().sort((a, b) => (b.year || 0) - (a.year || 0));
       $("#net-info").innerHTML = `<h3>${esc(p.label)}</h3>
         <p class="muted" style="margin:0 0 8px;font-size:13px">${p.lab ? "Lab member" : esc(p.inst || "Outside collaborator")} · ${p.papers} paper${p.papers === 1 ? "" : "s"} with ${esc(m.name)}</p>
-        ${p.lab ? `<p style="margin:0 0 8px"><a href="#network/${p.id}">Centre the network on ${esc(p.label)} →</a></p>` : ""}
+        ${p.lab ? `<p style="margin:0 0 8px"><a href="#analytics/${p.id}">Centre the network on ${esc(p.label)} →</a></p>` : ""}
         <ul>${ws.slice(0, 12).map((w) => `<li>${paperLink(w)} <span class="muted">(${w.year || "n.d."})</span></li>`).join("")}</ul>
         ${ws.length > 12 ? `<p class="muted" style="font-size:12px">+ ${ws.length - 12} more</p>` : ""}
         <p style="font-size:12px"><a href="#" id="net-back">← Back to ${esc(m.name)}</a></p>`;
@@ -1001,17 +1207,28 @@
     const fromSel = $("#venue-from"), toSel = $("#venue-to"), typeSel = $("#venue-type"), memSel = $("#venue-member"), q = $("#venue-search");
     fromSel.innerHTML = years.map((y) => `<option>${y}</option>`).join("");
     toSel.innerHTML = years.slice().reverse().map((y) => `<option>${y}</option>`).join("");
-    fromSel.value = years[0]; toSel.value = years[years.length - 1];
-    Object.keys(D.summary.venue_types).sort().forEach((k) => typeSel.insertAdjacentHTML("beforeend", `<option value="${esc(k)}">${esc(k)}</option>`));
+    fromSel.value = Math.max(years[0], THIS_YEAR - 4); toSel.value = years[years.length - 1];
+    KINDS.forEach((k) => typeSel.insertAdjacentHTML("beforeend", `<option value="${esc(k)}">${esc(k)}</option>`));
     D.members.slice().sort((a, b) => a.name.localeCompare(b.name)).forEach((m) => memSel.insertAdjacentHTML("beforeend", `<option value="${m.slug}">${esc(m.name)}</option>`));
+    const VI = D.venues || {};
+    const cites = (w) => (w.gs_c ?? w.cited_by_count) || 0;
+    const rankHtml = (x) => {
+      const v = VI[x.name] || {};
+      const r = v.rank ? `<span class="tag" title="${esc(v.src || "")}">${esc(v.rank)}</span>` : `<span class="muted">unranked</span>`;
+      return r + (v.verified ? "" : ` <span class="tag uv" title="Type and rank are automatic until this venue is reviewed in venues.yaml">not verified</span>`);
+    };
     const cols = [
-      { key: "name", label: "Venue", html: (x) => `${esc(x.name)} <span class="tag">${esc(x.type)}</span>` },
+      { key: "name", label: "Venue", html: (x) => `${esc(x.name)} <span class="tag" style="border-left:3px solid var(${KIND_COL[x.kind]})">${esc(x.kind)}</span>` },
+      { key: "rankv", label: "Rank", val: (x) => { const v = VI[x.name] || {}; return v.rank ? TIER_SORT.indexOf(v.tier) : 99; }, html: rankHtml },
       { key: "papers", label: "Papers", num: true },
       { key: "citations", label: "Citations", num: true, html: (x) => fmt(x.citations) },
       { key: "avg", label: "Cites / paper", num: true, html: (x) => x.avg.toFixed(1) },
+      { key: "impact", label: "Impact", num: true, val: (x) => (VI[x.name] || {}).impact ?? -1,
+        html: (x) => { const i = (VI[x.name] || {}).impact; return i == null ? "–" : `<span title="OpenAlex 2-year mean citedness, similar to an impact factor">${i.toFixed(1)}</span>`; } },
       { key: "nmem", label: "Members", num: true },
       { key: "first", label: "Years", num: true, html: (x) => (x.first === x.last ? x.first : `${x.first}–${x.last}`) },
     ];
+    const TIER_SORT = D.tier_order || [];
     let t = null;
     function refresh() {
       let from = Number(fromSel.value), to = Number(toSel.value);
@@ -1019,24 +1236,28 @@
       const ws = D.works.filter((w) => w.year && w.year >= from && w.year <= to && (!memSel.value || w.lab.includes(memSel.value)));
       const v = {};
       ws.forEach((w) => {
-        if (!w.venue) return;
-        const x = (v[w.venue] ||= { name: w.venue, type: w.venue_type, papers: 0, citations: 0, members: new Set(), first: 9999, last: 0 });
-        x.papers++; x.citations += w.cited_by_count; w.lab.forEach((s) => x.members.add(s));
+        if (!w.vkey) return;
+        const x = (v[w.vkey] ||= { name: w.vkey, kind: w.kind, papers: 0, citations: 0, members: new Set(), first: 9999, last: 0 });
+        x.papers++; x.citations += cites(w); w.lab.forEach((s) => x.members.add(s));
         x.first = Math.min(x.first, w.year); x.last = Math.max(x.last, w.year);
       });
       const all = Object.values(v).map((x) => ({ ...x, nmem: x.members.size, avg: x.citations / x.papers }));
-      const vt = {}; ws.forEach((w) => (vt[w.venue_type] = (vt[w.venue_type] || 0) + 1));
-      const pct = (k) => (ws.length ? Math.round((100 * (vt[k] || 0)) / ws.length) : 0);
+      const n = (k) => ws.filter((w) => w.kind === k).length;
+      const pct = (a, b) => (b ? `${Math.round((100 * a) / b)}%` : "–");
+      const jn = ws.filter((w) => w.kind === "Journal"), cf = ws.filter((w) => w.kind === "Conference");
+      const jTop = jn.filter((w) => ["Q1 journals", "Q2 journals", "A* journals", "A journals"].includes(w.tier)).length;
+      const cTop = cf.filter((w) => ["A* conferences", "A conferences"].includes(w.tier)).length;
+      const unv = ws.filter((w) => w.vkey && !(VI[w.vkey] || {}).verified).length;
       const span = from === to ? `in ${from}` : `${from}–${to}`;
       kpis($("#venue-kpis"), [
-        [fmt(ws.length), "Papers", span],
-        [fmt(all.length), "Distinct venues", span],
-        [`${pct("journal")}%`, "In journals", `${fmt(vt.journal || 0)} papers`],
-        [`${pct("conference")}%`, "At conferences", `${fmt(vt.conference || 0)} papers`],
-        [`${pct("book series") + pct("ebook platform")}%`, "Books & chapters", `${fmt((vt["book series"] || 0) + (vt["ebook platform"] || 0))} papers`],
+        [fmt(ws.length), "Papers", `${span} · ${fmt(n("Journal"))} journal, ${fmt(n("Conference"))} conference`],
+        [pct(jTop, jn.length), "Journal papers in Q1–Q2", `${fmt(jTop)} of ${fmt(jn.length)} · SCImago`],
+        [pct(cTop, cf.length), "Conference papers at A*/A", `${fmt(cTop)} of ${fmt(cf.length)} · ICORE`],
+        [pct(n("Book / chapter") + n("Preprint / repository"), ws.length), "Books & preprints", `${fmt(n("Book / chapter"))} books/chapters, ${fmt(n("Preprint / repository"))} preprints`],
+        [fmt(unv), "Papers in unreviewed venues", unv ? "type and rank are automatic" : "all venues reviewed"],
       ]);
       const term = q.value.trim().toLowerCase();
-      const rows = all.filter((x) => (!typeSel.value || x.type === typeSel.value) && (!term || x.name.toLowerCase().includes(term)));
+      const rows = all.filter((x) => (!typeSel.value || x.kind === typeSel.value) && (!term || x.name.toLowerCase().includes(term)));
       $("#venue-count").textContent = `${fmt(rows.length)} venue${rows.length === 1 ? "" : "s"}`;
       if (t) t.update(rows); else t = table($("#venue-table"), cols, rows, { sort: "papers", limit: 30 });
     }
@@ -1049,17 +1270,26 @@
   function renderPapers() {
     const ms = $("#p-member"), ys = $("#p-year");
     D.members.slice().sort((a, b) => a.name.localeCompare(b.name)).forEach((m) => ms.insertAdjacentHTML("beforeend", `<option value="${m.slug}">${esc(m.name)}</option>`));
-    [...new Set(D.works.map((w) => w.year).filter(Boolean))].sort((a, b) => b - a).forEach((y) => ys.insertAdjacentHTML("beforeend", `<option>${y}</option>`));
-    const cols = paperCols().concat([{ key: "lab", label: "Lab authors", val: (w) => w.lab.length,
-      html: (w) => w.lab.map((s) => `<a class="tag" href="#member/${s}">${esc(members[s]?.name || s)}</a>`).join(" ") }]);
-    D.works.forEach((w) => (w._q = `${w.title} ${w.venue || ""} ${w.authors.map((a) => a.name).join(" ")}`.toLowerCase()));
+    // OpenAlex papers + papers that are only on Google Scholar profiles
+    const rows = D.works.map((w) => ({ ...w, c: w.gs_c ?? w.cited_by_count, src: w.gs_c != null ? "GS" : "OA", link: w.doi, scholarOnly: !!w.scholar_only }))
+      .concat((D.extra_papers || []).map((p, i) => ({ id: "x" + i, title: p.t, year: p.y, venue: p.v, c: p.c, src: "GS", link: p.u, lab: p.m, authors: [], scholarOnly: true })));
+    [...new Set(rows.map((w) => w.year).filter(Boolean))].sort((a, b) => b - a).forEach((y) => ys.insertAdjacentHTML("beforeend", `<option>${y}</option>`));
+    const cols = [
+      { key: "title", label: "Title", cls: "title", html: (w) => `${paperLink(w)}
+          <div class="sub">${w.authors.length ? esc(shortAuthors(w)) + " · " : ""}${w.venue ? `<i>${esc(w.venue)}</i>` : ""}${w.kind ? ` · ${esc(w.kind)}` : ""}${w.versions > 1 ? ` · ${w.versions} versions merged` : ""}${w.scholarOnly ? ` · <span title="Listed on Google Scholar but not found in OpenAlex">Scholar only</span>` : ""}</div>` },
+      { key: "year", label: "Year", num: true },
+      { key: "c", label: "Citations", num: true, html: (w) => `${fmt(w.c || 0)}${w.src === "OA" ? ' <span class="tag" title="Not matched to a Google Scholar entry; OpenAlex count shown">OA</span>' : ""}` },
+      { key: "lab", label: "Lab authors", val: (w) => w.lab.length,
+        html: (w) => w.lab.map((s) => `<a class="tag" href="#member/${s}">${esc(members[s]?.name || s)}</a>`).join(" ") },
+    ];
+    rows.forEach((w) => (w._q = `${w.title} ${w.venue || ""} ${w.authors.map((a) => a.name).join(" ")}`.toLowerCase()));
     const filtered = () => {
       const q = $("#p-search").value.trim().toLowerCase(), m = ms.value, y = Number(ys.value);
-      const r = D.works.filter((w) => (!q || w._q.includes(q)) && (!m || w.lab.includes(m)) && (!y || w.year === y));
-      $("#p-count").textContent = `${fmt(r.length)} paper${r.length === 1 ? "" : "s"}`;
+      const r = rows.filter((w) => (!q || w._q.includes(q)) && (!m || w.lab.includes(m)) && (!y || w.year === y));
+      $("#p-count").textContent = `${fmt(r.length)} paper${r.length === 1 ? "" : "s"} · citations from Google Scholar where matched`;
       return r;
     };
-    const t = table($("#papers-table"), cols, filtered(), { sort: "cited_by_count", limit: 100 });
+    const t = table($("#papers-table"), cols, filtered(), { sort: "c", limit: 100 });
     $("#p-search").oninput = ms.onchange = ys.onchange = () => t.update(filtered());
   }
 })();
