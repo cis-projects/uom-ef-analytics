@@ -9,17 +9,17 @@ venues:
   - {name: "Swinburne figshare (Swinburne University of Technology)", type: preprint, reviewed: false}  # 33 papers (5 in the last 5 years)
   - {name: "Journal of the Association for Information Systems", type: journal, reviewed: false}  # 32 papers (5 in the last 5 years)
   - {name: "Pacific Asia Conference on Information Systems", type: conference, reviewed: false}  # 9 papers (5 in the last 5 years)
-  - {name: "International Conference on Artificial Intelligence in Education", type: conference, rank: "A", reviewed: false}  # 7 papers (5 in the last 5 years) · rank from ICORE title (International Conference on Artificial Intelligence in Education)
+  - {name: "International Conference on Artificial Intelligence in Education", type: conference, rank: "A", reviewed: false}  # 7 papers (5 in the last 5 years) · rank from venues.yaml
   - {name: "International Conference on Enterprise Information Systems", type: conference, reviewed: false}  # 5 papers (5 in the last 5 years) · maybe ICORE: International Conference on Cooperative Information Systems (B)
   - {name: "Pacific Journal of Technology Enhanced Learning", type: journal, reviewed: false}  # 5 papers (5 in the last 5 years)
+  - {name: "Minerva Access (University of Melbourne)", type: preprint, reviewed: false}  # 8 papers (4 in the last 5 years)
   - {name: "European Journal of Engineering Education", type: journal, reviewed: false}  # 7 papers (4 in the last 5 years)
   - {name: "arXiv (Cornell University)", type: preprint, reviewed: false}  # 7 papers (4 in the last 5 years)
   - {name: "Australian Conference on Computer-Human Interaction (OzCHI)", type: conference, rank: "Australasian", reviewed: false}  # 8 papers (3 in the last 5 years) · rank from ICORE2026 acronym OZCHI
-  - {name: "Minerva Access (University of Melbourne)", type: preprint, reviewed: false}  # 6 papers (3 in the last 5 years)
   - {name: "SEFI Annual Conference", type: conference, reviewed: false}  # 4 papers (3 in the last 5 years)
   - {name: "ACM SIGCAS/SIGCHI Conference on Computing and Sustainable Societies (COMPASS)", type: conference, rank: "C", reviewed: false}  # 3 papers (3 in the last 5 years) · rank from ICORE2026 acronym COMPASS
   - {name: "Information Systems Education Journal", type: journal, rank: "C", reviewed: false}  # 3 papers (3 in the last 5 years) · rank from CORE journals (ERA2010)
-  - {name: "International Conference on Learning Analytics and Knowledge (LAK)", type: conference, rank: "A", reviewed: false}  # 3 papers (3 in the last 5 years) · rank from ICORE2026 acronym LAK
+  - {name: "International Conference on Learning Analytics and Knowledge (LAK)", type: conference, rank: "A", reviewed: false}  # 3 papers (3 in the last 5 years) · rank from venues.yaml
   - {name: "Proceedings of the ISCAP Conference ISSN", type: conference, reviewed: false}  # 3 papers (3 in the last 5 years)
   - {name: "Research in Engineering Education Symposium (REES)", type: conference, reviewed: false}  # 3 papers (3 in the last 5 years)
   - {name: "IEEE International Conference on Teaching, Assessment, and Learning for Engineering", type: conference, reviewed: false}  # 5 papers (2 in the last 5 years)
@@ -32,7 +32,7 @@ venues:
   - {name: "Routledge eBooks", type: book, reviewed: false}  # 3 papers (2 in the last 5 years)
   - {name: "SSRN Electronic Journal", type: preprint, reviewed: false}  # 3 papers (2 in the last 5 years)
   - {name: "ACM International Symposium on Blockchain and Secure Critical Infrastructure (BSCI)", type: conference, reviewed: false}  # 2 papers (2 in the last 5 years)
-  - {name: "ACM Technical Symposium on Computer Science Education (SIGCSE)", type: conference, rank: "A", reviewed: false}  # 2 papers (2 in the last 5 years) · rank from ICORE2026 acronym SIGCSE
+  - {name: "ACM Technical Symposium on Computer Science Education (SIGCSE)", type: conference, rank: "A", reviewed: false}  # 2 papers (2 in the last 5 years) · rank from venues.yaml
   - {name: "AIS SIGED International Conference on Information Systems", type: conference, reviewed: false}  # 2 papers (2 in the last 5 years)
   - {name: "Behaviour and Information Technology", type: journal, rank: "B", reviewed: false}  # 2 papers (2 in the last 5 years) · rank from CORE journals (CORE2020)
   - {name: "CHI Conference Extended Abstracts on Human Factors in Computing Systems (CHI EA)", type: conference, reviewed: false}  # 2 papers (2 in the last 5 years) · side event of CHI (A* in ICORE2026) - main-track rank not applied
@@ -51,7 +51,6 @@ venues:
   - {name: "Anais do ... Simpósio Brasileiro de Informática na Educação/Anais do Simpósio Brasileiro de Informática na Educação", type: conference, reviewed: false}  # 3 papers (1 in the last 5 years)
   - {name: "Proceedings of the", type: conference, reviewed: false}  # 3 papers (1 in the last 5 years)
   - {name: "ACM Transactions on Human-Robot Interaction", type: journal, reviewed: false}  # 2 papers (1 in the last 5 years)
-  - {name: "ACM/IEEE International Conference on Software Engineering: Companion Proceedings (ICSE-Companion)", type: conference, reviewed: false}  # 2 papers (1 in the last 5 years) · side event of ICSE (A* in ICORE2026) - main-track rank not applied
   - {name: "Americas Conference on Information Systems", type: conference, reviewed: false}  # 2 papers (1 in the last 5 years)
   - {name: "European Conference on Information Systems", type: conference, reviewed: false}  # 2 papers (1 in the last 5 years) · maybe ICORE: European Conference on Information Retrieval (A)
   - {name: "Findings of the Association for Computational Linguistics: ACL (Findings of ACL)", type: conference, reviewed: false}  # 2 papers (1 in the last 5 years) · side event of ACL (A* in ICORE2026) - main-track rank not applied
@@ -105,7 +104,6 @@ venues:
   - {name: "Integrated science", type: book, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "International Conference on Industrial Engineering and Operations Management (IEOM)", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "International Conference on Network and System Security", type: conference, rank: "B", reviewed: false}  # 1 paper (1 in the last 5 years) · rank from ICORE title (International Conference on network and System Security)
-  - {name: "International Conference on Software Engineering (ICSE", type: conference, rank: "A*", reviewed: false}  # 1 paper (1 in the last 5 years) · rank from ICORE2026 acronym ICSE
   - {name: "International Conference on Software Engineering Research", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · maybe ICORE: International Conference on Software Engineering (A*)
   - {name: "International Convention on Information and Communication Technology, Electronics and Microelectronics", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "International Higher Education", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
@@ -123,7 +121,7 @@ venues:
   - {name: "Journal of Medical Internet Research", type: journal, rank: "Q1", reviewed: false}  # 1 paper (1 in the last 5 years) · rank from SCImago
   - {name: "Journal of Mental Health", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "Journal of Studies in International Education", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
-  - {name: "Koli Calling International Conference on Computing Education Research", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years)
+  - {name: "Koli Calling International Conference on Computing Education Research", type: conference, rank: "B", reviewed: false}  # 1 paper (1 in the last 5 years) · rank from venues.yaml
   - {name: "Learning Letters", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "Lecture notes in educational technology", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · OpenAlex says book
   - {name: "Mathematics", type: journal, rank: "Q2", reviewed: false}  # 1 paper (1 in the last 5 years) · rank from SCImago
@@ -284,6 +282,7 @@ venues:
   - {name: "International Conference on Information and Communication Technology Convergence (ICTC)", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years) · maybe ICORE: International Conference on Information and Communication Technologies and Development (C)
   - {name: "International Conference on Intelligent Virtual Agents", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years) · maybe ICORE: The International Conference on Intelligent Environments (B)
   - {name: "International Conference on Parallel and Distributed Computing, Applications and Technologies (PDCAT)", type: conference, rank: "C", reviewed: false}  # 1 paper (0 in the last 5 years) · rank from ICORE2026 acronym PDCAT
+  - {name: "International Conference on Software Engineering (ICSE", type: conference, rank: "A*", reviewed: false}  # 1 paper (0 in the last 5 years) · rank from venues.yaml
   - {name: "International Conference on System Science and Engineering", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years) · maybe ICORE: International Conference on Systems Engineering (C)
   - {name: "International Conference on Theory and Applications of Models of Computation", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years) · maybe ICORE: Conference on Theory and Applications of Models of Computation (C)
   - {name: "International Conference on Web Information Systems Engineering (WISE)", type: conference, rank: "B", reviewed: false}  # 1 paper (0 in the last 5 years) · rank from ICORE2026 acronym WISE
