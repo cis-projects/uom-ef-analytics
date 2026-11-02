@@ -144,6 +144,7 @@ venues:
   - {name: "The Higher Education Research and Development Society of Australasia (HERDSA", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "The International journal of engineering education: Special Issue Artificial", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "The Open Education Global Conference", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years)
+  - {name: "The Sydney eScholarship Repository (The University of Sydney)", type: preprint, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "Visible Language", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "Australasian Software Engineering Conference (ASWEC)", type: conference, reviewed: false}  # 11 papers (0 in the last 5 years)
   - {name: "Adaptive Agents and Multi-Agents Systems", type: conference, reviewed: false}  # 10 papers (0 in the last 5 years)
