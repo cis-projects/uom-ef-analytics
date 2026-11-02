@@ -14,8 +14,8 @@
 
   // ------------------------------------------------------------ load
   Promise.all([
-    fetch("data/data.json").then((r) => { if (!r.ok) throw new Error("data.json not found"); return r.json(); }),
-    fetch("data/history.json").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+    fetch("data/data.json", { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error("data.json not found"); return r.json(); }),
+    fetch("data/history.json", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
   ]).then(([d, h]) => {
     D = d; H = h;
     THIS_YEAR = Number((D.generated_at || "").slice(0, 4)) || new Date().getFullYear();
@@ -680,12 +680,17 @@
   // ------------------------------------------------------------ member
   function renderMember(slug) {
     const sel = $("#member-select");
+    let first = false;
     if (!sel.options.length) {
+      first = true;
       const sorted = D.members.slice().sort((a, b) => b.active - a.active || b.citations - a.citations);
       sel.innerHTML = sorted.map((m) => `<option value="${m.slug}">${esc(m.name)}${m.active ? "" : " (alumni)"}</option>`).join("");
       sel.onchange = () => (location.hash = `member/${sel.value}`);
     }
-    const m = members[slug] || members[sel.value] || members[sel.options[0].value];
+    // lab.yaml can name who is shown first: lab: default_member: "Jane Doe"
+    const want = String((D.lab || {}).default_member || "").trim().toLowerCase();
+    const preferred = want && D.members.find((x) => x.name.toLowerCase() === want || x.slug === want);
+    const m = members[slug] || (first && preferred) || members[sel.value] || members[sel.options[0].value];
     sel.value = m.slug;
     const links = [];
     if (m.scholar) links.push(`<a href="${esc(m.scholar)}" target="_blank" rel="noopener">Google Scholar ↗</a>`);
