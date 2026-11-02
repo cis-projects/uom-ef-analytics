@@ -15,9 +15,13 @@
 <body>
   <header class="top">
     <div class="wrap top-inner">
-      <div>
-        <h1 id="lab-name">Lab dashboard</h1>
-        <p id="lab-desc" class="muted"></p>
+      <div class="hd">
+        <div>
+          <div class="hd-inst" id="lab-inst"></div>
+          <h1 id="lab-name">Lab dashboard</h1>
+          <p id="lab-desc" class="hd-lede"></p>
+        </div>
+        <div class="hd-links"><a class="btn" id="lab-expert" target="_blank" rel="noopener" hidden>Find an Expert profile ↗</a><span class="muted" id="lab-updated"></span></div>
       </div>
       <nav class="tabs" id="tabs">
         <a href="#overview" data-tab="overview">Overview</a>
@@ -32,15 +36,41 @@
   <main class="wrap">
     <!-- ================= OVERVIEW ================= -->
     <section id="tab-overview" class="tab">
-      <div class="kpis" id="lab-kpis"></div>
-      <div class="year-band">
-        <div class="year-head"><h3 id="year-title">This year so far</h3><span class="muted" id="year-sub"></span></div>
-        <div class="kpis" id="year-kpis"></div>
-      </div>
+      <div class="sec"><h2>At a glance</h2></div>
+      <div class="kpis kpis5" id="lab-kpis"></div>
+
+      <div class="sec"><h2>Highlights</h2></div>
       <div class="grid2">
-        <div class="card"><h3>Citations received per year</h3><p class="note" id="lab-cby-note">Each paper counted once, even when several members co-authored it.</p><div class="chart"><canvas id="c-lab-cby"></canvas></div></div>
-        <div class="card"><h3>Total citations over time</h3><p class="note">Running total at the end of each year.</p><div class="chart"><canvas id="c-lab-cum"></canvas></div></div>
+        <div class="card"><h3>Latest publications</h3><p class="note">Newest papers first, with the venue's rank.</p><ul class="feed" id="hl-latest"></ul></div>
+        <div class="card"><h3 id="hl-top-title">Most cited recent work</h3><p class="note">Papers from the last three years with the most citations (Google Scholar where matched).</p><ul class="feed" id="hl-top"></ul></div>
       </div>
+
+      <div class="sec"><h2>Impact</h2></div>
+      <div class="card">
+        <div class="card-head"><div><h3>Citations</h3><p class="note" style="margin:0" id="cit-note"></p></div>
+          <div class="seg" id="cit-mode" role="group" aria-label="View"><button data-m="new" class="on">New each year</button><button data-m="total">Total to date</button></div></div>
+        <div id="cit-chart" class="d3chart"></div>
+      </div>
+
+      <div class="sec"><h2>Output &amp; quality</h2></div>
+      <div class="grid3">
+        <div class="card">
+          <div class="card-head"><div><h3>What we publish, by year</h3><p class="note" style="margin:0">Papers by type of output; each paper counted once.</p></div>
+            <div class="seg" id="mix-mode" role="group" aria-label="View"><button data-m="n" class="on">Papers</button><button data-m="p">Share</button></div></div>
+          <div id="mix-chart" class="d3chart"></div><div class="legend plain" id="mix-legend"></div>
+        </div>
+        <div class="card"><h3>Venue quality</h3><p class="note" id="q-note"></p><div class="qual" id="qual"></div>
+          <p style="margin:10px 0 0;font-size:13px"><a href="#venues">All venues and ranks →</a></p></div>
+      </div>
+
+      <div class="sec"><h2>Working together</h2></div>
+      <div class="grid3">
+        <div class="card"><h3>Papers written by two or more team members</h3><p class="note">Hover a bar for its share of all the team's papers that year.</p><div id="joint-chart" class="d3chart"></div></div>
+        <div class="card"><h3>Strongest partnerships</h3><p class="note" id="pairs-note"></p><ul class="pairs" id="pairs"></ul>
+          <p style="margin:10px 0 0;font-size:13px"><a href="#analytics/team">Explore the team network →</a></p></div>
+      </div>
+
+      <div class="sec"><h2>Research &amp; reach</h2></div>
       <div class="card" id="themes-card" hidden>
         <div class="card-head"><div><h3>What we work on</h3>
           <p class="note" style="margin:0" id="themes-note"></p></div></div>
@@ -64,6 +94,7 @@
           <div><h3 style="font-size:13px;margin:4px 0 8px">Top citing countries</h3><div id="map-top"></div></div>
         </div>
       </div>
+      <div class="sec"><h2>People</h2></div>
       <div class="card">
         <div class="card-head"><div><h3>Who published when</h3><p class="note" style="margin:0" id="heat-note">Each row is a member, each column a year. Darker = more.</p></div>
           <div class="filters"><label>Order <select id="heat-sort" aria-label="Order rows by">

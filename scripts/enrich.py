@@ -462,40 +462,55 @@ def fetch_impact(oa, source_ids: list[str], cache: dict, max_age_days: int = 60)
 
 
 # =============================================================== Scholar citations on papers
+def clean_title(t: str | None) -> str:
+    """Drop markup some records carry in titles, e.g. '$\\mathsf {DisIMS}$ DisIMS: ...' or '<i>...</i>'."""
+    t = re.sub(r"\$[^$]*\$", " ", t or "")
+    return re.sub(r"<[^>]+>", " ", t)
+
+
+def same_paper(a: str, ya, b: str, yb) -> bool:
+    """a, b: normalised titles. Same paper if identical; or one is the other plus a subtitle (years within 2);
+    or nearly identical, e.g. a typo or one changed word (years within 2)."""
+    if a == b:
+        return True
+    if not a or not b or abs((ya or yb or 0) - (yb or ya or 0)) > 2:
+        return False
+    short, long_ = (a, b) if len(a) <= len(b) else (b, a)
+    if len(short) >= 18 and long_.startswith(short):
+        return True
+    if abs(len(a) - len(b)) <= 0.1 * max(len(a), len(b)) and len(short) >= 18:
+        sm = difflib.SequenceMatcher(None, a, b)
+        return sm.real_quick_ratio() >= 0.92 and sm.quick_ratio() >= 0.92 and sm.ratio() >= 0.92
+    return False
+
+
 def attach_scholar(data: dict, nt) -> None:
+    key = lambda t: nt(clean_title(t))
     gs: dict[str, dict] = {}
     for m in data["members"]:
         for p in m.get("scholar_papers") or []:
-            k = nt(p["title"])
+            k = key(p["title"])
             if not k:
                 continue
-            e = gs.setdefault(k, {"t": p["title"], "y": p.get("year"), "v": p.get("venue"), "c": 0, "u": p.get("link"), "m": set()})
+            # the same paper can be listed twice on a profile, or on two members' profiles with slightly
+            # different titles: fold those into one entry
+            hit = k if k in gs else next((g for g in gs if same_paper(k, p.get("year"), g, gs[g]["y"])), None)
+            if hit is None:
+                gs[k] = {"t": p["title"], "y": p.get("year"), "v": p.get("venue"), "c": 0, "u": p.get("link"), "m": set()}
+                hit = k
+            e = gs[hit]
             e["c"] = max(e["c"], p.get("c") or 0)
+            e["v"] = e["v"] or p.get("venue")
             e["m"].add(m["slug"])
     used = set()
     by_len = sorted(gs, key=len)
 
     def find(w):
-        """Same title, or one title is the other plus a subtitle ("GenAI as a learning partner" vs
-        "GenAI as a learning partner: supporting..."), or nearly identical - and a similar year."""
-        t = nt(w["title"])
-        if t in gs:
+        t = key(w["title"])
+        if t in gs and t not in used:
             return t
-        if len(t) < 18:
-            return None
-        y = w.get("year") or 0
-        for k in by_len:
-            e = gs[k]
-            if abs((e["y"] or y) - y) > 1 or k in used:
-                continue
-            short, long_ = (t, k) if len(t) <= len(k) else (k, t)
-            if len(short) >= 18 and long_.startswith(short):
-                return k
-            if abs(len(k) - len(t)) <= 0.1 * len(t):
-                sm = difflib.SequenceMatcher(None, t, k)
-                if sm.real_quick_ratio() >= 0.92 and sm.quick_ratio() >= 0.92 and sm.ratio() >= 0.92:
-                    return k
-        return None
+        y = w.get("year")
+        return next((k for k in by_len if k not in used and same_paper(t, y, k, gs[k]["y"])), None)
 
     for w in data["works"]:
         k = find(w)

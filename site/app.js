@@ -30,8 +30,12 @@
   function init() {
     const lab = D.lab || {};
     document.title = lab.name ? `${lab.name} · Publications` : document.title;
-    $("#lab-name").textContent = lab.name || "Lab dashboard";
+    const [main, ...rest] = String(lab.name || "Lab dashboard").split(/,\s*/);
+    $("#lab-name").innerHTML = esc(main) + (rest.length ? `<span class="sub">${esc(rest.join(", "))}</span>` : "");
+    $("#lab-inst").textContent = lab.institution || "";
     $("#lab-desc").textContent = lab.description || "";
+    if (lab.expert) { $("#lab-expert").href = lab.expert; $("#lab-expert").hidden = false; }
+    $("#lab-updated").textContent = `Updated ${new Date(D.generated_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}`;
     const nGs = D.members.filter((m) => m.source === "Google Scholar").length;
     $("#foot").innerHTML = nGs === D.members.length
       ? `Citation numbers from each member's Google Scholar profile; venues and the collaboration network from <a href="https://openalex.org">OpenAlex</a>. Updated ${esc(D.generated_at.slice(0, 10))}.`
@@ -155,21 +159,27 @@
   function renderOverview() {
     const s = D.summary;
     const mo = momentum(s.cites_by_year);
-    kpis($("#lab-kpis"), [
-      [fmt(s.works), "Papers", `${fmt(D.members.length)} members`],
-      [fmt(s.citations), "Citations", `<span id="lab-cit-sub">each paper counted once</span>`],
-      [fmt(s.h), "Lab h-index", `i10-index ${fmt(s.i10)}`],
-      [fmt(s.external_collaborators), "Outside collaborators", `from ${fmt(Object.keys(s.countries).length)} countries`],
-      ...(D.citing ? [[fmt(new Set(Object.values(D.citing.by_year).flatMap(Object.keys)).size), "Countries citing us", "all time"]] : []),
-    ]);
-    renderThisYear(mo);
-    const yrs = s.years || D.years;
-    if (s.source === "Google Scholar") {
-      $("#lab-cby-note").textContent = "Sum of members' Google Scholar profiles, so a paper shared by two members counts for both.";
-      $("#lab-cit-sub").textContent = "Google Scholar, shared papers once";
+    const nt = (t) => String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+    const papersIn = (yr) => { const t = new Set(); D.works.forEach((w) => w.year === yr && t.add(nt(w.title)));
+      D.members.forEach((m) => (m.scholar_papers || []).forEach((p) => p.year === yr && t.add(nt(p.title)))); return t.size; };
+    const nCountries = D.citing ? new Set(Object.values(D.citing.by_year).flatMap(Object.keys)).size : null;
+    const box = (v, l, s2) => `<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div><div class="s2">${s2}</div></div>`;
+    $("#lab-kpis").innerHTML = [
+      box(fmt(s.works), "Papers", `<b>${fmt(papersIn(THIS_YEAR))}</b> in ${THIS_YEAR} so far · ${fmt(papersIn(LAST_YEAR))} in ${LAST_YEAR}`),
+      box(fmt(s.citations), "Citations", `<b>+${fmt(mo.now)}</b> in ${THIS_YEAR} so far${mo.pace == null ? "" : ` · on pace for ${paceHtml(mo)}`}`),
+      box(fmt(s.h), "h-index", `i10-index <b>${fmt(s.i10)}</b>`),
+      nCountries != null ? box(fmt(nCountries), "Countries citing us", "all time") : box(fmt(s.external_collaborators), "Outside collaborators", "all time"),
+      box(fmt(D.members.length), "Members", `<b>${fmt(s.external_collaborators)}</b> outside co-authors`),
+    ].join("");
+    // a one-line summary under the title, from the data (unless lab.yaml sets a description)
+    if (!(D.lab || {}).description && D.themes?.items?.length) {
+      const th = D.themes.items.slice().sort((a, b) => b.m.length - a.m.length || b.n - a.n).slice(0, 2).map((t, i) => (i ? t.label.charAt(0).toLowerCase() + t.label.slice(1) : t.label));
+      $("#lab-desc").textContent = `${D.members.length} academics publishing on ${th.join(" and ")}, and more: ${fmt(s.works)} papers, ${fmt(s.citations)} citations${nCountries ? `, cited in ${nCountries} countries` : ""}.`;
     }
-    chart("c-lab-cby", "bar", yearLabels(yrs), fillYears(s.cites_by_year, yrs), { unit: "citations" });
-    chart("c-lab-cum", "line", yearLabels(yrs), fillYears(s.cumulative, yrs), { unit: "citations in total" });
+    renderHighlights();
+    renderCitations();
+    renderOutput();
+    renderTogether();
     if (H.length >= 2) {
       $("#history-card").hidden = false;
       chart("c-history", "line", H.map((h) => h.date), H.map((h) => h.lab.citations), { unit: "citations" });
@@ -232,6 +242,137 @@
     $("#year-title").textContent = `${THIS_YEAR} so far`;
     $("#year-sub").textContent = `Up to ${new Date(D.generated_at).toLocaleDateString("en-GB", { day: "numeric", month: "long" })}`;
     kpis($("#year-kpis"), items);
+  }
+
+  // ------------------------------------------------------------ overview: new sections
+  const isTopRank = (r) => /^(Q1|Q2|A\*|A)$/.test(r || "");
+  function rankBadge(w) {
+    const v = (D.venues || {})[w.vkey] || {};
+    if (!v.rank) return `<span class="badge none" title="Unranked venue">—</span>`;
+    const label = (v.src || "").startsWith("CORE journals") ? `CORE ${v.rank}` : v.rank;
+    return `<span class="badge ${isTopRank(v.rank) && !label.startsWith("CORE") ? "hi" : ""} ${v.verified ? "" : "uv"}" title="${esc(label)} · ${esc(v.src || "")}${v.verified ? "" : " (not yet verified)"}">${esc(label)}</span>`;
+  }
+  const wCites = (w) => (w.gs_c ?? w.cited_by_count) || 0;
+  const oaNum = (w) => { const m = /^W(\d+)/.exec(w.id || ""); return m ? +m[1] : 0; };
+
+  function renderHighlights() {
+    const item = (w, showC) => `<li><div>${rankBadge(w)}</div><div><div class="t">${paperLink(w)}</div>
+      <div class="m">${esc(w.lab.map((s) => members[s]?.name || s).join(", "))}${w.venue ? ` · <i>${esc(w.venue)}</i>` : ""} · ${w.year}${showC ? ` · <span class="c">${fmt(wCites(w))} citation${wCites(w) === 1 ? "" : "s"}</span>` : ""}</div></div></li>`;
+    const latest = D.works.filter((w) => w.year).sort((a, b) => b.year - a.year || oaNum(b) - oaNum(a)).slice(0, 8);
+    $("#hl-latest").innerHTML = latest.map((w) => item(w, false)).join("");
+    const top = D.works.filter((w) => w.year >= THIS_YEAR - 2).sort((a, b) => wCites(b) - wCites(a)).slice(0, 6);
+    $("#hl-top-title").textContent = `Most cited recent work (${THIS_YEAR - 2}–${THIS_YEAR})`;
+    $("#hl-top").innerHTML = top.map((w) => item(w, true)).join("");
+  }
+
+  const d3tip = (ev, html) => { const t = $("#tooltip"); t.hidden = false; t.innerHTML = html; t.style.left = `${Math.min(ev.clientX + 14, innerWidth - 300)}px`; t.style.top = `${ev.clientY + 14}px`; };
+  const d3untip = () => ($("#tooltip").hidden = true);
+
+  function renderCitations() {
+    const s = D.summary, host = $("#cit-chart");
+    if (!window.d3) return;
+    const yrs = (s.years || D.years).map(Number);
+    const cNow = s.cites_by_year[String(THIS_YEAR)] || 0, cLast = s.cites_by_year[String(LAST_YEAR)] || 0;
+    const W = Math.max(320, host.clientWidth || 900), H = 260, M = { t: 10, r: 10, b: 26, l: 52 };
+    host.innerHTML = "";
+    const svg = d3.select(host).append("svg").attr("viewBox", [0, 0, W, H]);
+    const x = d3.scaleBand().domain(yrs).range([M.l, W - M.r]).padding(0.22), y = d3.scaleLinear().range([H - M.b, M.t]);
+    const step = Math.ceil(yrs.length / Math.max(4, Math.floor(W / 90)));
+    svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - M.b})`)
+      .call(d3.axisBottom(x).tickValues(yrs.filter((v) => (THIS_YEAR - v) % step === 0)).tickFormat((v) => (v === THIS_YEAR ? `${v} (so far)` : v)).tickSizeOuter(0));
+    const gy = svg.append("g").attr("class", "axis").attr("transform", `translate(${M.l},0)`);
+    const bars = svg.append("g"), line = svg.append("path").attr("fill", "none").attr("stroke-width", 2), dots = svg.append("g");
+    function draw(mode) {
+      const vals = yrs.map((v) => (mode === "new" ? s.cites_by_year[String(v)] || 0 : s.cumulative[String(v)] ?? null));
+      y.domain([0, (d3.max(vals) || 1) * 1.08]).nice();
+      gy.transition().duration(500).call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(",")).tickSize(-(W - M.l - M.r))).call((g) => g.select(".domain").remove());
+      const T = d3.transition().duration(600);
+      bars.selectAll("rect").data(yrs).join("rect").attr("x", (v) => x(v)).attr("width", x.bandwidth()).attr("rx", 3)
+        .attr("fill", (v) => (v === THIS_YEAR ? css("--accent-soft") : css("--accent")))
+        .transition(T).attr("y", (v, i) => (mode === "new" ? y(vals[i]) : H - M.b)).attr("height", (v, i) => (mode === "new" ? H - M.b - y(vals[i]) : 0));
+      const pts = yrs.map((v, i) => [x(v) + x.bandwidth() / 2, vals[i]]).filter((p) => p[1] != null);
+      line.attr("stroke", css("--accent")).transition(T).attr("d", d3.line()(pts.map((p) => [p[0], y(p[1])]))).style("opacity", mode === "total" ? 1 : 0);
+      dots.selectAll("circle").data(pts).join("circle").attr("r", 4).attr("fill", css("--accent")).attr("stroke", css("--surface")).attr("stroke-width", 2)
+        .transition(T).attr("cx", (p) => p[0]).attr("cy", (p) => y(p[1])).style("opacity", mode === "total" ? 1 : 0);
+      $("#cit-note").textContent = mode === "new"
+        ? `Citations received each year: ${fmt(cNow)} so far in ${THIS_YEAR}, ${fmt(cLast)} in all of ${LAST_YEAR}.${s.source === "Google Scholar" ? " Sum of members' Scholar profiles." : ""}`
+        : `Total citations at the end of each year: ${fmt(s.citations)} today.`;
+    }
+    svg.selectAll(".hit").data(yrs).join("rect").attr("class", "hit").attr("x", (v) => x(v) - (x.step() * x.paddingInner()) / 2).attr("width", x.step())
+      .attr("y", M.t).attr("height", H - M.t - M.b).attr("fill", "transparent")
+      .on("mousemove", (ev, v) => d3tip(ev, `<b>${v}${v === THIS_YEAR ? " (so far)" : ""}</b><br>${fmt(s.cites_by_year[String(v)] || 0)} new citations${s.cumulative[String(v)] != null ? `<br>${fmt(s.cumulative[String(v)])} in total` : ""}`))
+      .on("mouseleave", d3untip);
+    let mode = "new";
+    draw(mode);
+    document.querySelectorAll("#cit-mode button").forEach((b) => (b.onclick = () => {
+      mode = b.dataset.m; document.querySelectorAll("#cit-mode button").forEach((x) => x.classList.toggle("on", x === b)); draw(mode);
+    }));
+  }
+
+  function renderOutput() {
+    if (!window.d3) return;
+    const K = ["Journal", "Conference", "Book / chapter", "Preprint / repository"];
+    const yrs = d3.range(THIS_YEAR - 9, THIS_YEAR + 1);
+    const mix = Object.fromEntries(yrs.map((v) => [v, Object.fromEntries(K.map((k) => [k, 0]))]));
+    D.works.forEach((w) => { if (mix[w.year] && mix[w.year][w.kind] != null) mix[w.year][w.kind]++; });
+    $("#mix-legend").innerHTML = K.map((k) => `<span><i class="sw" style="background:var(${KIND_COL[k]})"></i>${k}</span>`).join("");
+    const host = $("#mix-chart"), W = Math.max(320, host.clientWidth || 760), H = 240, M = { t: 10, r: 8, b: 26, l: 40 };
+    host.innerHTML = "";
+    const svg = d3.select(host).append("svg").attr("viewBox", [0, 0, W, H]);
+    const x = d3.scaleBand().domain(yrs).range([M.l, W - M.r]).padding(0.25), y = d3.scaleLinear().range([H - M.b, M.t]);
+    svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - M.b})`)
+      .call(d3.axisBottom(x).tickFormat((v) => (v === THIS_YEAR ? `${v}*` : W < 500 ? `’${String(v).slice(2)}` : v)).tickSizeOuter(0));
+    const gy = svg.append("g").attr("class", "axis").attr("transform", `translate(${M.l},0)`), g = svg.append("g");
+    function draw(mode) {
+      const rows = yrs.map((v) => { const t = d3.sum(K, (k) => mix[v][k]); return { year: v, tot: t, ...Object.fromEntries(K.map((k) => [k, mode === "n" ? mix[v][k] : t ? mix[v][k] / t : 0])) }; });
+      y.domain([0, mode === "n" ? (d3.max(rows, (r) => r.tot) || 1) * 1.08 : 1]).nice();
+      gy.transition().duration(500).call(d3.axisLeft(y).ticks(5).tickFormat(mode === "n" ? d3.format("d") : d3.format(".0%")).tickSize(-(W - M.l - M.r))).call((s) => s.select(".domain").remove());
+      g.selectAll("g.l").data(d3.stack().keys(K)(rows)).join("g").attr("class", "l").attr("fill", (d) => css(KIND_COL[d.key]))
+        .selectAll("rect").data((d) => d).join("rect").attr("x", (d) => x(d.data.year)).attr("width", x.bandwidth()).attr("rx", 2)
+        .on("mousemove", (ev, d) => d3tip(ev, `<b>${d.data.year}${d.data.year === THIS_YEAR ? " (so far)" : ""}</b><br>${K.map((k) => `${k}: ${fmt(mix[d.data.year][k])}`).join("<br>")}`))
+        .on("mouseleave", d3untip)
+        .transition().duration(600).attr("y", (d) => y(d[1]) + 1).attr("height", (d) => Math.max(0, y(d[0]) - y(d[1]) - 2));
+    }
+    draw("n");
+    document.querySelectorAll("#mix-mode button").forEach((b) => (b.onclick = () => {
+      document.querySelectorAll("#mix-mode button").forEach((x) => x.classList.toggle("on", x === b)); draw(b.dataset.m);
+    }));
+    // venue quality (last 5 years)
+    const from = THIS_YEAR - 4, R = D.works.filter((w) => w.year >= from);
+    const jn = R.filter((w) => w.kind === "Journal"), cf = R.filter((w) => w.kind === "Conference");
+    const ranked = (ws) => ws.filter((w) => !/^Unranked/.test(w.tier || "Unranked"));
+    const jR = ranked(jn), cR = ranked(cf);
+    const jTop = jn.filter((w) => ["Q1 journals", "Q2 journals"].includes(w.tier)).length, cTop = cf.filter((w) => ["A* conferences", "A conferences"].includes(w.tier)).length;
+    $("#q-note").textContent = `Papers since ${from}. SCImago quartiles for journals, ICORE ranks for conferences.`;
+    const row = (lbl, top, rk, all, col) => `<div class="qrow"><div class="big">${rk ? Math.round((100 * top) / rk) + "%" : "–"}</div><div class="lbl">${lbl}</div>
+      <div class="qbar"><span style="width:${all ? (100 * top) / all : 0}%;background:var(${col})"></span><span style="width:${all ? (100 * (rk - top)) / all : 0}%;background:var(${col});opacity:.4"></span><span style="flex:1;background:var(--grid)"></span></div>
+      <div class="sub">${top} top-tier · ${rk - top} other ranked · ${all - rk} not ranked (of ${all})</div></div>`;
+    $("#qual").innerHTML = row("of ranked journal papers are Q1–Q2", jTop, jR.length, jn.length, "--s1") + row("of ranked conference papers are A* or A", cTop, cR.length, cf.length, "--s2");
+  }
+
+  function renderTogether() {
+    if (!window.d3) return;
+    const yrs = d3.range(THIS_YEAR - 9, THIS_YEAR + 1);
+    const joint = Object.fromEntries(yrs.map((v) => [v, 0])), all = Object.fromEntries(yrs.map((v) => [v, 0]));
+    D.works.forEach((w) => { if (all[w.year] != null) { all[w.year]++; if (w.lab.length >= 2) joint[w.year]++; } });
+    const host = $("#joint-chart"), W = Math.max(320, host.clientWidth || 760), H = 200, M = { t: 16, r: 8, b: 26, l: 32 };
+    host.innerHTML = "";
+    const svg = d3.select(host).append("svg").attr("viewBox", [0, 0, W, H]);
+    const x = d3.scaleBand().domain(yrs).range([M.l, W - M.r]).padding(0.3), y = d3.scaleLinear().domain([0, (d3.max(yrs, (v) => joint[v]) || 1) * 1.15]).nice().range([H - M.b, M.t]);
+    svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - M.b})`).call(d3.axisBottom(x).tickFormat((v) => (v === THIS_YEAR ? `${v}*` : W < 500 ? `’${String(v).slice(2)}` : v)).tickSizeOuter(0));
+    svg.append("g").attr("class", "axis").attr("transform", `translate(${M.l},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(d3.format("d")).tickSize(-(W - M.l - M.r))).call((s) => s.select(".domain").remove());
+    svg.append("g").selectAll("rect").data(yrs).join("rect").attr("x", (v) => x(v)).attr("width", x.bandwidth()).attr("rx", 3).attr("fill", css("--accent")).attr("y", H - M.b).attr("height", 0)
+      .on("mousemove", (ev, v) => d3tip(ev, `<b>${v}${v === THIS_YEAR ? " (so far)" : ""}</b><br>${joint[v]} joint paper${joint[v] === 1 ? "" : "s"} · ${all[v] ? Math.round((100 * joint[v]) / all[v]) : 0}% of the team's papers`))
+      .on("mouseleave", d3untip)
+      .transition().duration(700).delay((v, i) => i * 40).attr("y", (v) => y(joint[v])).attr("height", (v) => H - M.b - y(joint[v]));
+    svg.append("g").selectAll("text").data(yrs.filter((v) => joint[v])).join("text").attr("x", (v) => x(v) + x.bandwidth() / 2).attr("y", (v) => y(joint[v]) - 5)
+      .attr("text-anchor", "middle").attr("font-size", 11).attr("fill", css("--text-2")).text((v) => joint[v]);
+    const from = THIS_YEAR - 4, pairs = {};
+    D.works.forEach((w) => { if (w.year >= from) { const ks = w.lab.slice().sort(); for (let i = 0; i < ks.length; i++) for (let j = i + 1; j < ks.length; j++) { const k = ks[i] + "|" + ks[j]; pairs[k] = (pairs[k] || 0) + 1; } } });
+    const top = Object.entries(pairs).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    $("#pairs-note").textContent = `Papers written together since ${from}.`;
+    $("#pairs").innerHTML = top.length ? top.map(([k, n]) => { const [a, b] = k.split("|"); return `<li><span>${esc(members[a]?.name || a)} &amp; ${esc(members[b]?.name || b)}</span><b>${n}</b></li>`; }).join("")
+      : `<li class="muted">No joint papers yet.</li>`;
   }
 
   // ------------------------------------------------------------ themes: what the group works on
