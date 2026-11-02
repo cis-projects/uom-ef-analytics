@@ -98,4 +98,8 @@ members:
   - name: Tawfiq Islam
     role: Education-Focused
     orcid: 0000-0003-4922-7807
-    scholar: https://scholar.google.com/citations?user=TVzqs2YAAAAJ&hl=en
+    scholar: https://scholar.google.com/citations?user=TVzqs2YAAAAJ&hl=en  
+  - name: Philip Dart
+    role: Education-Focused
+    orcid: 0000-0002-8205-8470
+    scholar: https://scholar.google.com/citations?user=6DTOhAEAAAAJ&hl=en

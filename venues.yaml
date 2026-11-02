@@ -105,14 +105,14 @@ venues:
   - {name: "CHI Conference on Human Factors in Computing Systems", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "COLING (International Conference on Computational Linguistics)", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
   - {name: "ChiPrints (University of Chichester)", type: preprint, reviewed: false}  # 1 paper (1 in the last 5 years)
-  - {name: "Computers and Education Artificial Intelligence", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
-  - {name: "Computers in Human Behavior", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
-  - {name: "Computers in Human Behavior Artificial Humans", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
+  - {name: "Computers and Education Artificial Intelligence", type: journal, rank: "Q1", reviewed: true}  # confirmed Q1 (SCImago)
+  - {name: "Computers in Human Behavior", type: journal, rank: "Q1", reviewed: true}  # confirmed Q1 (SCImago)
+  - {name: "Computers in Human Behavior Artificial Humans", type: journal, rank: "Q1", reviewed: true}  # confirmed Q1 (SCImago)
   - {name: "Distributed Ledger Technologies Research and Practice", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "EDUCATION JOURNAL", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
   - {name: "Education Sciences", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
-  - {name: "Educational Technology & Society", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
-  - {name: "Educational Technology Research and Development", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
+  - {name: "Educational Technology & Society", type: journal, rank: "Q1", reviewed: true}  # confirmed Q1 (SCImago)
+  - {name: "Educational Technology Research and Development", type: journal, rank: "Q1", reviewed: true}  # confirmed Q1 (SCImago)
   - {name: "Enterprise Architecture Professional Journal, https://eapj.org/enterprise", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
   - {name: "European Operations Management Association Annual Conference", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
   - {name: "Fifth International Workshop on Affective Computing in Requirements Engineering", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · from Scholar
@@ -197,7 +197,7 @@ venues:
   - {name: "ACM SIGSAM Bulletin", type: journal, reviewed: false}  # 2 papers (0 in the last 5 years) · from Scholar
   - {name: "Advances in computer and electrical engineering book series", type: book, reviewed: false}  # 2 papers (0 in the last 5 years)
   - {name: "Advances in medical technologies and clinical practice book series", type: book, reviewed: false}  # 2 papers (0 in the last 5 years)
-  - {name: "Australasian Journal of Educational Technology", type: journal, reviewed: false}  # 2 papers (0 in the last 5 years)
+  - {name: "Australasian Journal of Educational Technology", type: journal, rank: "Q1", reviewed: true}  # confirmed Q1 (SCImago)
   - {name: "Australian Joint Conference on Artificial Intelligence", type: conference, reviewed: false}  # 2 papers (0 in the last 5 years) · from Scholar
   - {name: "Bulletin of the Australian Mathematical Society", type: journal, reviewed: false}  # 2 papers (0 in the last 5 years)
   - {name: "Computer Standards & Interfaces", type: journal, reviewed: false}  # 2 papers (0 in the last 5 years)
@@ -251,7 +251,7 @@ venues:
   - {name: "Computer Applications in Engineering Education", type: journal, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Computer Graphics Workshop", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years) · from Scholar
   - {name: "Computers & Chemical Engineering", type: journal, reviewed: false}  # 1 paper (0 in the last 5 years)
-  - {name: "Computers & Education", type: journal, reviewed: false}  # 1 paper (0 in the last 5 years)
+  - {name: "Computers & Education", type: journal, rank: "Q1", reviewed: true}  # confirmed Q1 (SCImago)
   - {name: "Computers & Mathematics with Applications", type: journal, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Computers in Human Behavior Reports", type: journal, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Conference on Automated Deducation, December", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years) · from Scholar

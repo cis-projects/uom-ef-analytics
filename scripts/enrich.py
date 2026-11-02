@@ -35,6 +35,13 @@ def norm(t: str | None) -> str:
     return re.sub(r"[^a-z0-9]+", "", (t or "").lower())
 
 
+def jnorm(t: str | None) -> str:
+    """Journal-name key: '&' = 'and', a leading 'The' and punctuation ignored."""
+    t = re.sub(r"&", " and ", (t or "").lower())
+    t = re.sub(r"^the\s+", "", t.strip())
+    return re.sub(r"[^a-z0-9]+", "", t)
+
+
 def log(msg: str) -> None:
     print(msg, file=sys.stderr if msg.startswith("  !") else sys.stdout)
 
@@ -172,7 +179,7 @@ def _issn(s: str) -> str:
 
 
 def load_rankings(folder: Path) -> dict:
-    out = {"sj_issn": {}, "sj_title": {}, "icore": [], "abdc_issn": {}, "abdc_title": {}}
+    out = {"sj_issn": {}, "sj_title": {}, "icore": [], "abdc_issn": {}, "abdc_title": {}, "cj_issn": {}, "cj_title": {}}
     sj = folder / "scimago.csv"
     if sj.exists():
         rows = csv.DictReader(io.StringIO(sj.read_text()), delimiter=";")
@@ -183,16 +190,20 @@ def load_rankings(folder: Path) -> dict:
             for i in (r.get("Issn") or "").split(","):
                 if _issn(i):
                     out["sj_issn"][_issn(i)] = q
-            out["sj_title"][norm(r.get("Title"))] = q
-    ic = folder / "icore.csv"
-    if ic.exists():
-        for r in csv.reader(io.StringIO(ic.read_text())):
+            out["sj_title"][jnorm(r.get("Title"))] = q
+    # icore.csv first, then any older CORE exports (e.g. core2023.csv for fields ICORE 2026 no longer ranks)
+    files = sorted(folder.glob("*core*.csv"), key=lambda f: (f.name != "icore.csv", f.name))
+    seen = set()
+    for ic in files:
+        for r in csv.reader(io.StringIO(ic.read_text(encoding="utf-8-sig", errors="replace"))):
             if len(r) < 5:
                 continue
-            title, acr, rank = r[1].strip(), r[2].strip(), r[4].strip()
+            title, acr, src, rank = r[1].strip(), r[2].strip(), r[3].strip(), r[4].strip()
             rank = "Australasian" if rank.lower().startswith("australasian") else rank
-            if rank in ("A*", "A", "B", "C", "Australasian"):
-                out["icore"].append({"title": title, "acr": acr, "rank": rank, "clean": clean_conf(title)})
+            key = (acr.upper(), clean_conf(title))
+            if rank in ("A*", "A", "B", "C", "Australasian") and key not in seen:
+                seen.add(key)
+                out["icore"].append({"title": title, "acr": acr, "rank": rank, "src": src or ic.stem, "clean": clean_conf(title)})
     ab = folder / "abdc.csv"
     if ab.exists():  # optional, added by hand: columns must include an ISSN and a rating column
         for r in csv.DictReader(io.StringIO(ab.read_text())):
@@ -204,9 +215,20 @@ def load_rankings(folder: Path) -> dict:
                 if "issn" in k and _issn(r[keys[k]]):
                     out["abdc_issn"][_issn(r[keys[k]])] = rating
             t = next((r[keys[k]] for k in keys if "title" in k), "")
-            out["abdc_title"][norm(t)] = rating
+            out["abdc_title"][jnorm(t)] = rating
+    cj = folder / "core_journals.csv"
+    if cj.exists():  # CORE journal list (A*/A/B/C; last updated 2020, older entries from ERA 2010)
+        for r in csv.DictReader(io.StringIO(cj.read_text(encoding="utf-8-sig", errors="replace"))):
+            rank = (r.get("rank") or "").strip()
+            if rank not in ("A*", "A", "B", "C"):
+                continue
+            src = (r.get("source") or "CORE").strip()
+            for k in ("ISSN1", "ISSN2", "ISSN3", "ISSN4"):
+                if _issn(r.get(k) or ""):
+                    out["cj_issn"][_issn(r[k])] = (rank, src)
+            out["cj_title"][jnorm(r.get("title"))] = (rank, src)
     log(f"Rankings loaded: {len(out['sj_issn'])} SCImago ISSNs, {len(out['icore'])} ICORE conferences, "
-        f"{len(out['abdc_issn'])} ABDC ISSNs")
+        f"{len(out['abdc_issn'])} ABDC ISSNs, {len(out['cj_title'])} CORE journals")
     return out
 
 
@@ -217,28 +239,62 @@ def clean_conf(name: str) -> str:
     return re.sub(r"[^a-z]+", " ", t).strip()
 
 
+SIDE_TRACK = re.compile(r"extended abstracts|companion|adjunct|workshops?\b|doctoral|posters?|demos?|tutorials?|"
+                        r"spring symposium|fall symposium|summer school|^findings of", re.I)
+CONF_STOP = set("""international conference proceedings annual symposium workshop joint the and for ieee acm on of in
+at with world national european asian australasian australian pacific""".split())
+
+
+def _sig(text: str) -> set:
+    t = re.sub(r"\(.*?\)", " ", (text or "").lower())
+    return {w for w in re.findall(r"[a-z]{3,}", t) if w not in CONF_STOP}
+
+
 def match_conference(name: str, icore: list) -> tuple[str | None, str | None, float]:
-    best = (None, None, 0.0)
-    for e in icore:   # acronym, case-sensitive, as a whole word
-        a = e["acr"]
-        if len(a) >= 3 and re.search(rf"(?<![A-Za-z]){re.escape(a)}(?![A-Za-z])", name or ""):
-            if len(a) > len(best[1] or ""):
-                best = (e["rank"], a, 1.0)
-    if best[0]:
-        return best[0], f"ICORE acronym {best[1]}", 1.0
-    c = clean_conf(name)
-    if len(c) < 12:
-        return None, None, 0.0
+    """Rank of a conference from ICORE/CORE.
+    1. Acronym: written exactly as ICORE writes it, or equal to the venue's own acronym in brackets,
+       AND the two names must share most of their key words (so ICIS the IEEE conference is not
+       mistaken for ICIS the AIS one). A name that is just the acronym ("Proceedings of AAMAS") is fine.
+    2. Otherwise a near-identical full name.
+    Workshops, companions, extended abstracts etc. of a ranked conference do NOT get its rank."""
+    name = name or ""
+    own = {m.upper() for m in re.findall(r"\(([A-Za-z@&\-]{3,})\)", name)}
+    vs = _sig(name)
+    best, note = None, None
     for e in icore:
-        sm = difflib.SequenceMatcher(None, c, e["clean"])
-        if sm.real_quick_ratio() < 0.85 or sm.quick_ratio() < 0.85:
+        a = e["acr"]
+        if len(a) < 3:
             continue
-        r = sm.ratio()
-        if r > best[2]:
-            best = (e["rank"], e["title"], r)
-    if best[2] >= 0.9:
-        return best[0], f"ICORE title ({best[1]})", best[2]
-    return None, (f"maybe ICORE: {best[1]} ({best[0]})" if best[2] >= 0.8 else None), best[2]
+        hit = a.upper() in own or re.search(rf"(?<![A-Za-z]){re.escape(a)}(?![A-Za-z])", name)
+        if not hit:
+            continue
+        es = _sig(e["title"])
+        only_acronym = vs <= {a.lower()} or not (vs - {a.lower()})
+        cover = min(len(vs & es) / max(1, len(es)), len((vs - {a.lower()}) & es) / max(1, len(vs - {a.lower()})))
+        if only_acronym or cover >= 0.5:
+            if not best or len(a) > len(best["acr"]):
+                best = e
+        elif not note:
+            note = f"maybe ICORE: {e['title']} ({e['rank']}) - acronym {a} matches but the names differ"
+    if best:
+        if SIDE_TRACK.search(name):
+            return None, f"side event of {best['acr']} ({best['rank']} in {best.get('src', 'ICORE')}) - main-track rank not applied", 0.0
+        return best["rank"], f"{best.get('src', 'ICORE')} acronym {best['acr']}", 1.0
+    c = clean_conf(name)
+    top = (None, None, 0.0)
+    if len(c) >= 12:
+        for e in icore:
+            sm = difflib.SequenceMatcher(None, c, e["clean"])
+            if sm.real_quick_ratio() < 0.85 or sm.quick_ratio() < 0.85:
+                continue
+            r = sm.ratio()
+            if r > top[2]:
+                top = (e["rank"], e["title"], r)
+    if top[2] >= 0.95 and not SIDE_TRACK.search(name):
+        return top[0], f"ICORE title ({top[1]})", top[2]
+    if top[2] >= 0.85:
+        note = note or f"maybe ICORE: {top[1]} ({top[0]})"
+    return None, note, top[2]
 
 
 def tier_of(kind: str, rank: str | None) -> str:
@@ -252,7 +308,8 @@ def tier_of(kind: str, rank: str | None) -> str:
     return {"Book / chapter": "Books (not ranked)", "Preprint / repository": "Not peer-reviewed"}.get(kind, "Other outputs")
 
 
-TIER_ORDER = ["Q1 journals", "Q2 journals", "Q3 journals", "Q4 journals", "A* journals", "A journals", "B journals",
+TIER_ORDER = ["Q1 journals", "Q2 journals", "Q3 journals", "Q4 journals", "CORE A* journals", "CORE A journals",
+              "CORE B journals", "CORE C journals", "A* journals", "A journals", "B journals",
               "C journals", "Unranked journals", "A* conferences", "A conferences", "B conferences", "C conferences",
               "Australasian conferences", "Unranked conferences", "Books (not ranked)", "Not peer-reviewed",
               "Other outputs"]
@@ -331,18 +388,22 @@ def apply_venues(data: dict, raw_sources: dict, venues_path: Path, data_dir: Pat
                     rank = None
             elif kind == "Journal":
                 issns = [_issn(i) for i in (raw_sources.get(name, {}).get("issn") or [])]
-                rank = next((R["sj_issn"][i] for i in issns if i in R["sj_issn"]), None) or R["sj_title"].get(norm(canon))
+                rank = next((R["sj_issn"][i] for i in issns if i in R["sj_issn"]), None) or R["sj_title"].get(jnorm(canon))
                 src = "SCImago" if rank else None
                 if not rank:
-                    rank = next((R["abdc_issn"][i] for i in issns if i in R["abdc_issn"]), None) or R["abdc_title"].get(norm(canon))
+                    rank = next((R["abdc_issn"][i] for i in issns if i in R["abdc_issn"]), None) or R["abdc_title"].get(jnorm(canon))
                     src = "ABDC" if rank else None
+                if not rank:   # last resort: the CORE journal list
+                    hit = next((R["cj_issn"][i] for i in issns if i in R["cj_issn"]), None) or R["cj_title"].get(jnorm(canon))
+                    if hit:
+                        rank, src = hit[0], f"CORE journals ({hit[1]})"
             elif kind == "Conference":
                 rank, how, _ = match_conference(canon, R["icore"])
                 src = how if rank else None
                 note = None if rank else how
             v = venues[label] = {
                 "name": label, "canon": canon, "kind": kind, "rank": rank, "src": src, "note": note,
-                "tier": tier_of(kind, rank), "verified": bool(entry and entry.get("reviewed")),
+                "tier": (f"CORE {rank} journals" if (src or "").startswith("CORE journals") else tier_of(kind, rank)), "verified": bool(entry and entry.get("reviewed")),
                 "listed": bool(entry), "openalex_kind": oa_kind, "names": set(),
                 "impact": impact.get(raw_sources.get(name, {}).get("id")), "papers": 0, "recent": 0,
             }
@@ -412,13 +473,38 @@ def attach_scholar(data: dict, nt) -> None:
             e["c"] = max(e["c"], p.get("c") or 0)
             e["m"].add(m["slug"])
     used = set()
+    by_len = sorted(gs, key=len)
+
+    def find(w):
+        """Same title, or one title is the other plus a subtitle ("GenAI as a learning partner" vs
+        "GenAI as a learning partner: supporting..."), or nearly identical - and a similar year."""
+        t = nt(w["title"])
+        if t in gs:
+            return t
+        if len(t) < 18:
+            return None
+        y = w.get("year") or 0
+        for k in by_len:
+            e = gs[k]
+            if abs((e["y"] or y) - y) > 1 or k in used:
+                continue
+            short, long_ = (t, k) if len(t) <= len(k) else (k, t)
+            if len(short) >= 18 and long_.startswith(short):
+                return k
+            if abs(len(k) - len(t)) <= 0.1 * len(t):
+                sm = difflib.SequenceMatcher(None, t, k)
+                if sm.real_quick_ratio() >= 0.92 and sm.quick_ratio() >= 0.92 and sm.ratio() >= 0.92:
+                    return k
+        return None
+
     for w in data["works"]:
-        e = gs.get(nt(w["title"]))
-        if e:
+        k = find(w)
+        if k:
+            e = gs[k]
             w["gs_c"] = e["c"]
             if e.get("v"):
                 w["gs_v"] = e["v"]
-            used.add(nt(w["title"]))
+            used.add(k)
     data["extra_papers"] = sorted(({"t": e["t"], "y": e["y"], "v": e["v"], "c": e["c"], "u": e["u"], "m": sorted(e["m"])}
                                    for k, e in gs.items() if k not in used), key=lambda e: -e["c"])
 
