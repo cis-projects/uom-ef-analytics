@@ -1028,6 +1028,9 @@ def main():
         except Exception as e:   # the extra view must never stop the main site from updating
             import traceback; traceback.print_exc()
             print(f"::warning::the 'since {since_year}' view could not be built ({e}); the main site is unaffected.")
+    else:   # view switched off in lab.yaml: remove its old files so the site doesn't keep offering it
+        for f in ("data-since.json", "history-since.json"):
+            (out / f).unlink(missing_ok=True)
     if not args.from_raw:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cache_path.write_text(json.dumps(oa_cache, separators=(",", ":"), ensure_ascii=False))
