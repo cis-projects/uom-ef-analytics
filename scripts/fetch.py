@@ -999,8 +999,12 @@ def main():
           f"{s['citations']} citations, lab h-index {s['h']} [{s['source']}]; {len(hist)} monthly snapshot(s)")
 
     # --- the same site, counting only papers published from a given year (lab.yaml: lab -> since)
-    since = (cfg.get("lab") or {}).get("since") or {}
-    since_year = int(since.get("year") if isinstance(since, dict) else since or 0)
+    since = (cfg.get("lab") or {}).get("since")
+    try:   # 'since: 2020' or 'since: {year: 2020, reason: ...}'; anything else turns the extra view off
+        since_year = int((since.get("year") if isinstance(since, dict) else since) or 0)
+    except (TypeError, ValueError):
+        print(f"::warning::lab.yaml 'since' should be a year, e.g. 2020 (got {since!r}); the extra view is skipped.")
+        since_year = 0
     if since_year:
         try:
             year_fix = {}
