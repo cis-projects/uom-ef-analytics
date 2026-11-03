@@ -20,6 +20,7 @@
           <div class="hd-inst" id="lab-inst"></div>
           <h1 id="lab-name">Lab dashboard</h1>
           <p id="lab-desc" class="hd-lede"></p>
+          <p id="lab-period" class="hd-period" hidden></p>
         </div>
         <div class="hd-links"><a class="btn" id="lab-expert" target="_blank" rel="noopener" hidden>Find an Expert profile ↗</a><span class="muted" id="lab-updated"></span></div>
       </div>
@@ -187,6 +188,13 @@
         <input id="venue-search" type="search" placeholder="Search venues…" aria-label="Search venues">
       </div>
       <div class="kpis" id="venue-kpis"></div>
+      <div class="card" id="top-card">
+        <div class="card-head"><div><h3>Our top-ranked venues</h3><p class="note" id="top-sub" style="margin:0"></p></div>
+          <div class="chips" id="top-ranks" role="group" aria-label="Ranks to show"></div></div>
+        <p class="note">Ranks you set in venues.yaml, or found in ICORE (conferences), SCImago quartiles (journals) and the CORE journal list. Dashed badges are matched automatically and not yet reviewed. Follows the year, type, member and search filters above.</p>
+        <div id="top-venues" class="tv-grid"></div>
+        <div id="top-more" class="tv-more"></div>
+      </div>
       <div class="card"><div class="card-head"><h3>Where the lab publishes</h3><span class="muted" id="venue-count" style="font-size:13px"></span></div>
         <div class="table-wrap"><table class="tbl" id="venue-table"></table></div></div>
     </section>

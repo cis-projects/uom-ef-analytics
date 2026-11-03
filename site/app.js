@@ -13,10 +13,18 @@
   const rendered = {};
 
   // ------------------------------------------------------------ load
-  Promise.all([
-    fetch("data/data.json", { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error("data.json not found"); return r.json(); }),
-    fetch("data/history.json", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
-  ]).then(([d, h]) => {
+  // ?from=2020 shows the 'since' view (data-since.json, built when lab.yaml sets lab -> since)
+  let FROM = Number(new URLSearchParams(location.search).get("from")) || null;
+  const getJson = (f) => fetch(f, { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  (async () => {
+    let d = FROM ? await getJson("data/data-since.json") : null;
+    if (FROM && !d) { FROM = null; history.replaceState(null, "", location.pathname + location.hash); }  // not built yet
+    if (FROM) FROM = d.period?.from || FROM;
+    const h = await getJson(FROM ? "data/history-since.json" : "data/history.json");
+    d = d || await getJson("data/data.json");
+    if (!d) throw new Error("data.json not found");
+    return [d, h || []];
+  })().then(([d, h]) => {
     D = d; H = h;
     THIS_YEAR = Number((D.generated_at || "").slice(0, 4)) || new Date().getFullYear();
     LAST_YEAR = THIS_YEAR - 1;
@@ -37,15 +45,48 @@
     if (lab.expert) { $("#lab-expert").href = lab.expert; $("#lab-expert").hidden = false; }
     $("#lab-updated").textContent = `Updated ${new Date(D.generated_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}`;
     const nGs = D.members.filter((m) => m.source === "Google Scholar").length;
-    $("#foot").innerHTML = nGs === D.members.length
+    const stale = D.members.filter((m) => m.scholar_outdated).map((m) => m.name);
+    $("#foot").innerHTML = FROM && nGs + stale.length === D.members.length
+      ? `Citation numbers from each member's Google Scholar profile${stale.length ? ` (except ${esc(stale.join(", "))}: the Scholar profile lists nothing from ${FROM} on, so OpenAlex is used, with a co-author's Scholar count where there is one)` : ""}; venues and the collaboration network from <a href="https://openalex.org">OpenAlex</a>. Updated ${esc(D.generated_at.slice(0, 10))}.`
+      : nGs === D.members.length
       ? `Citation numbers from each member's Google Scholar profile; venues and the collaboration network from <a href="https://openalex.org">OpenAlex</a>. Updated ${esc(D.generated_at.slice(0, 10))}.`
       : nGs
       ? `Members marked <span class="tag">GS</span> show their Google Scholar numbers; everyone else, and the lab totals, use <a href="https://openalex.org">OpenAlex</a>, which usually counts fewer citations. Add a Scholar link to a member in lab.yaml to switch them over. Updated ${esc(D.generated_at.slice(0, 10))}.`
       : `Data from <a href="https://openalex.org">OpenAlex</a>, updated ${esc(D.generated_at.slice(0, 10))}. ` +
         `Citation counts are usually somewhat lower than Google Scholar's, which also counts preprints, theses and some duplicates. ` +
         `Per-year citations cover roughly the last ten years.`;
+    // a one-line summary under the title, from the data (unless lab.yaml sets a description)
+    if (!lab.description && D.themes?.items?.length) {
+      const s = D.summary, nCountries = D.citing ? new Set(Object.values(D.citing.by_year).flatMap(Object.keys)).size : null;
+      const th = D.themes.items.slice().sort((a, b) => b.m.length - a.m.length || b.n - a.n).slice(0, 2).map((t, i) => (i ? t.label.charAt(0).toLowerCase() + t.label.slice(1) : t.label));
+      $("#lab-desc").textContent = `${D.members.length} academics publishing on ${th.join(" and ")}, and more: ${fmt(s.works)} papers${FROM ? ` since ${FROM}` : ""}, ${fmt(s.citations)} citations${nCountries ? `, cited in ${nCountries} countries` : ""}.`;
+    }
+    renderPeriod();
+    if (FROM) $("#foot").insertAdjacentHTML("beforeend", ` <br>${FROM} onwards: only papers published in or after ${FROM}, with their citations. ` +
+      `Citations per year are estimated from OpenAlex's yearly pattern for each paper, scaled to its Google Scholar count. ` +
+      `Papers that OpenAlex dates ${FROM} or later but that were already being cited years before (usually a later repository copy) count as older work.`);
     window.addEventListener("hashchange", route);
     route();
+  }
+
+  // ------------------------------------------------------------ all years / since <year>
+  function renderPeriod() {
+    const cfg = (D.lab || {}).since;
+    const y = FROM || Number(typeof cfg === "object" ? cfg?.year : cfg) || null;
+    const el = $("#lab-period");
+    if (!y || !el) return;
+    const why = (typeof cfg === "object" && cfg?.reason) || "";
+    el.innerHTML = `<span class="seg" role="group" aria-label="Which papers to count">` +
+      `<button type="button" data-from="" class="${FROM ? "" : "on"}" aria-pressed="${!FROM}">All years</button>` +
+      `<button type="button" data-from="${y}" class="${FROM ? "on" : ""}" aria-pressed="${!!FROM}">${y} onwards</button></span>` +
+      `<span class="period-note">${FROM
+        ? `Showing only work published from ${y} onwards${why ? `, ${esc(why)}` : ""}. Switch to <b>All years</b> for everyone's full publication record.`
+        : `Showing all work published by the individuals listed here. To see only work published from ${y} onwards${why ? `, ${esc(why)}` : ""}, switch to <b>${y} onwards</b>.`}</span>`;
+    el.hidden = false;
+    el.querySelectorAll("button").forEach((b) => (b.onclick = () => {
+      if ((b.dataset.from || null) == (FROM ? String(FROM) : null)) return;
+      location.href = location.pathname + (b.dataset.from ? `?from=${b.dataset.from}` : "") + location.hash;
+    }));
   }
 
   // ------------------------------------------------------------ routing
@@ -168,14 +209,9 @@
       box(fmt(s.works), "Papers", `<b>${fmt(papersIn(THIS_YEAR))}</b> in ${THIS_YEAR} so far · ${fmt(papersIn(LAST_YEAR))} in ${LAST_YEAR}`),
       box(fmt(s.citations), "Citations", `<b>+${fmt(mo.now)}</b> in ${THIS_YEAR} so far${mo.pace == null ? "" : ` · on pace for ${paceHtml(mo)}`}`),
       box(fmt(s.h), "h-index", `i10-index <b>${fmt(s.i10)}</b>`),
-      nCountries != null ? box(fmt(nCountries), "Countries citing us", "all time") : box(fmt(s.external_collaborators), "Outside collaborators", "all time"),
+      nCountries != null ? box(fmt(nCountries), "Countries citing us", FROM ? `${FROM} onwards` : "all time") : box(fmt(s.external_collaborators), "Outside collaborators", FROM ? `${FROM} onwards` : "all time"),
       box(fmt(D.members.length), "Members", `<b>${fmt(s.external_collaborators)}</b> outside co-authors`),
     ].join("");
-    // a one-line summary under the title, from the data (unless lab.yaml sets a description)
-    if (!(D.lab || {}).description && D.themes?.items?.length) {
-      const th = D.themes.items.slice().sort((a, b) => b.m.length - a.m.length || b.n - a.n).slice(0, 2).map((t, i) => (i ? t.label.charAt(0).toLowerCase() + t.label.slice(1) : t.label));
-      $("#lab-desc").textContent = `${D.members.length} academics publishing on ${th.join(" and ")}, and more: ${fmt(s.works)} papers, ${fmt(s.citations)} citations${nCountries ? `, cited in ${nCountries} countries` : ""}.`;
-    }
     renderHighlights();
     renderCitations();
     renderOutput();
@@ -262,9 +298,10 @@
   function renderHighlights() {
     const item = (w, showC) => `<li><div>${rankBadge(w)}</div><div><div class="t">${paperLink(w)}</div>
       <div class="m">${esc(w.lab.map((s) => members[s]?.name || s).join(", "))}${w.venue ? ` · <i>${esc(w.venue)}</i>` : ""} · ${w.year}${showC ? ` · <span class="c">${fmt(wCites(w))} citation${wCites(w) === 1 ? "" : "s"}</span>` : ""}</div></div></li>`;
-    const latest = D.works.filter((w) => w.year).sort((a, b) => b.year - a.year || oaNum(b) - oaNum(a)).slice(0, 8);
+    // 'older' = an older paper with a later date (e.g. a repository copy), as in the 2020-onwards view
+    const latest = D.works.filter((w) => w.year && !w.older).sort((a, b) => b.year - a.year || oaNum(b) - oaNum(a)).slice(0, 8);
     $("#hl-latest").innerHTML = latest.map((w) => item(w, false)).join("");
-    const top = D.works.filter((w) => w.year >= THIS_YEAR - 2).sort((a, b) => wCites(b) - wCites(a)).slice(0, 6);
+    const top = D.works.filter((w) => w.year >= THIS_YEAR - 2 && !w.older).sort((a, b) => wCites(b) - wCites(a)).slice(0, 6);
     $("#hl-top-title").textContent = `Most cited recent work (${THIS_YEAR - 2}–${THIS_YEAR})`;
     $("#hl-top").innerHTML = top.map((w) => item(w, true)).join("");
   }
@@ -299,7 +336,7 @@
       dots.selectAll("circle").data(pts).join("circle").attr("r", 4).attr("fill", css("--accent")).attr("stroke", css("--surface")).attr("stroke-width", 2)
         .transition(T).attr("cx", (p) => p[0]).attr("cy", (p) => y(p[1])).style("opacity", mode === "total" ? 1 : 0);
       $("#cit-note").textContent = mode === "new"
-        ? `Citations received each year: ${fmt(cNow)} so far in ${THIS_YEAR}, ${fmt(cLast)} in all of ${LAST_YEAR}.${s.source === "Google Scholar" ? " Sum of members' Scholar profiles." : ""}`
+        ? `Citations received each year: ${fmt(cNow)} so far in ${THIS_YEAR}, ${fmt(cLast)} in all of ${LAST_YEAR}.${FROM ? ` Citations to papers from ${FROM} on, per year estimated (see the note at the bottom).` : s.source === "Google Scholar" ? " Sum of members' Scholar profiles." : ""}`
         : `Total citations at the end of each year: ${fmt(s.citations)} today.`;
     }
     svg.selectAll(".hit").data(yrs).join("rect").attr("class", "hit").attr("x", (v) => x(v) - (x.step() * x.paddingInner()) / 2).attr("width", x.step())
@@ -316,7 +353,7 @@
   function renderOutput() {
     if (!window.d3) return;
     const K = ["Journal", "Conference", "Book / chapter", "Preprint / repository"];
-    const yrs = d3.range(THIS_YEAR - 9, THIS_YEAR + 1);
+    const yrs = d3.range(Math.max(THIS_YEAR - 9, FROM || 0), THIS_YEAR + 1);
     const mix = Object.fromEntries(yrs.map((v) => [v, Object.fromEntries(K.map((k) => [k, 0]))]));
     D.works.forEach((w) => { if (mix[w.year] && mix[w.year][w.kind] != null) mix[w.year][w.kind]++; });
     $("#mix-legend").innerHTML = K.map((k) => `<span><i class="sw" style="background:var(${KIND_COL[k]})"></i>${k}</span>`).join("");
@@ -356,7 +393,7 @@
 
   function renderTogether() {
     if (!window.d3) return;
-    const yrs = d3.range(THIS_YEAR - 9, THIS_YEAR + 1);
+    const yrs = d3.range(Math.max(THIS_YEAR - 9, FROM || 0), THIS_YEAR + 1);
     const joint = Object.fromEntries(yrs.map((v) => [v, 0])), all = Object.fromEntries(yrs.map((v) => [v, 0]));
     D.works.forEach((w) => { if (all[w.year] != null) { all[w.year]++; if (w.lab.length >= 2) joint[w.year]++; } });
     const host = $("#joint-chart"), W = Math.max(320, host.clientWidth || 760), H = 200, M = { t: 16, r: 8, b: 26, l: 32 };
@@ -703,7 +740,8 @@
     $("#member-links").innerHTML = `<span class="muted">${esc(m.role || "")}</span>` + links.join("");
 
     const oa = m.openalex_counts || {};
-    const srcNote = m.source === "Google Scholar" ? `Google Scholar · OpenAlex finds ${fmt(oa.citations)}` : "OpenAlex";
+    const srcNote = m.source === "Google Scholar" ? `Google Scholar · OpenAlex finds ${fmt(oa.citations)}`
+      : m.scholar_outdated ? `OpenAlex · the Google Scholar profile lists nothing from ${FROM} on` : "OpenAlex";
     kpis($("#member-kpis"), [
       [fmt(m.works), "Papers", m.first_year ? `since ${m.first_year}` : ""],
       [fmt(m.citations), "Citations", srcNote],
@@ -1410,10 +1448,54 @@
       const rows = all.filter((x) => (!typeSel.value || x.kind === typeSel.value) && (!term || x.name.toLowerCase().includes(term)));
       $("#venue-count").textContent = `${fmt(rows.length)} venue${rows.length === 1 ? "" : "s"}`;
       if (t) t.update(rows); else t = table($("#venue-table"), cols, rows, { sort: "papers", limit: 30 });
+      renderTopVenues(ws.filter((w) => (!typeSel.value || w.kind === typeSel.value) && (!term || (w.vkey || "").toLowerCase().includes(term))), span);
     }
     fromSel.onchange = toSel.onchange = typeSel.onchange = memSel.onchange = refresh;
     q.oninput = refresh;
     refresh();
+  }
+
+  // ------------------------------------------------------------ venues: top-ranked venues and the papers in them
+  const TOP_RANKS = ["A*", "Q1", "A", "Q2", "B", "C"];
+  const topOn = new Set((() => { try { return JSON.parse(localStorage.getItem("lab-top-ranks")); } catch { return null; } })() || ["A*", "Q1", "A", "B"]);
+  let topAll = false;
+  function renderTopVenues(ws, span) {
+    const VI = D.venues || {};
+    const rankOf = (w) => (w.rank !== undefined ? w.rank : (VI[w.vkey] || {}).rank) || "";   // a paper's own rank wins
+    const srcOf = (w) => (w.rank !== undefined ? "set for this paper in venues.yaml" : (VI[w.vkey] || {}).src || "");
+    const label = (w) => (srcOf(w).startsWith("CORE journals") ? `CORE ${rankOf(w)}` : rankOf(w));
+    const counts = {};
+    ws.forEach((w) => { const r = rankOf(w); if (TOP_RANKS.includes(r)) counts[r] = (counts[r] || 0) + 1; });
+    $("#top-ranks").innerHTML = TOP_RANKS.map((r) => `<button type="button" class="chip ${topOn.has(r) ? "on" : ""}" aria-pressed="${topOn.has(r)}" data-r="${esc(r)}">${esc(r)} <span>${fmt(counts[r] || 0)}</span></button>`).join("");
+    $("#top-ranks").querySelectorAll("button").forEach((b) => (b.onclick = () => {
+      topOn.has(b.dataset.r) ? topOn.delete(b.dataset.r) : topOn.add(b.dataset.r);
+      try { localStorage.setItem("lab-top-ranks", JSON.stringify([...topOn])); } catch {}
+      renderTopVenues(ws, span);
+    }));
+    // group by venue + rank (a paper with its own rank sits apart from its venue's other papers)
+    const groups = {};
+    ws.filter((w) => w.vkey && topOn.has(rankOf(w))).forEach((w) => {
+      const k = `${w.vkey}|${label(w)}`;
+      (groups[k] ||= { name: w.vkey, kind: w.kind, rank: rankOf(w), label: label(w), src: srcOf(w),
+        verified: w.rank !== undefined || (VI[w.vkey] || {}).verified, papers: [] }).papers.push(w);
+    });
+    const order = (g) => TOP_RANKS.indexOf(g.rank) + (g.label.startsWith("CORE") ? 0.5 : 0);   // CORE journal ranks after ICORE/SCImago
+    const G = Object.values(groups).sort((a, b) => order(a) - order(b) || b.papers.length - a.papers.length || a.name.localeCompare(b.name));
+    const nP = G.reduce((t, g) => t + g.papers.length, 0);
+    $("#top-sub").textContent = G.length
+      ? `${fmt(nP)} paper${nP === 1 ? "" : "s"} in ${fmt(G.length)} venue${G.length === 1 ? "" : "s"} ranked ${[...topOn].filter((r) => TOP_RANKS.includes(r)).sort((a, b) => TOP_RANKS.indexOf(a) - TOP_RANKS.indexOf(b)).join(", ")} · ${span}`
+      : "";
+    const team = (w) => w.lab.map((s) => members[s]?.name || s).join(", ");
+    const LIMIT = 12, shown = topAll ? G : G.slice(0, LIMIT);
+    $("#top-more").innerHTML = G.length > LIMIT ? `<button type="button" class="btn">${topAll ? "Show fewer" : `Show all ${G.length} venues`}</button>` : "";
+    if (G.length > LIMIT) $("#top-more button").onclick = () => { topAll = !topAll; renderTopVenues(ws, span); };
+    $("#top-venues").innerHTML = !G.length ? `<p class="empty">No papers in venues with these ranks for the filters above.</p>` : shown.map((g) => `
+      <div class="tv">
+        <div class="tv-h"><span class="badge ${isTopRank(g.rank) && !g.label.startsWith("CORE") ? "hi" : ""} ${g.verified ? "" : "uv"}" title="${esc(g.label)} · ${esc(g.src)}${g.verified ? "" : " (not yet verified in venues.yaml)"}">${esc(g.label)}</span>
+          <div><div class="tv-n">${esc(g.name)}</div><div class="tv-k">${esc(g.kind)} · ${g.papers.length} paper${g.papers.length === 1 ? "" : "s"}</div></div></div>
+        <ul>${g.papers.sort((a, b) => b.year - a.year || wCites(b) - wCites(a)).map((w) => `
+          <li><span class="tv-y">${w.year}</span><div><div class="t">${paperLink(w)}</div><div class="m">${esc(team(w))}</div></div></li>`).join("")}</ul>
+      </div>`).join("");
   }
 
   // ------------------------------------------------------------ papers

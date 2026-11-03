@@ -402,6 +402,13 @@ def scholar_matches(works: list[dict], gs_titles: list[str]) -> set[str]:
     return hit
 
 
+def paper_key(s: str | None) -> str:
+    """A DOI in any spelling -> '10.x/y' (lower case); anything else -> a title key."""
+    s = (s or "").strip().lower()
+    s = re.sub(r"^https?://(dx\.)?doi\.org/", "", s)
+    return s if s.startswith("10.") else "t:" + norm_title(s)
+
+
 def name_sig(name: str | None) -> tuple:
     """('eduardo', 'oliveira') for 'Eduardo Oliveira' / 'EDUARDO OLIVEIRA' / accented variants."""
     t = unicodedata.normalize("NFKD", name or "").encode("ascii", "ignore").decode().lower()
@@ -468,27 +475,102 @@ def filter_by_scholar(works: dict, members: list[dict], scholar: dict, id2slug: 
     return dropped
 
 
-def apply_scholar(om: dict, prof: dict, oa_works: list[dict], this_year: int) -> None:
-    """Replace a member's headline numbers with their Google Scholar profile's."""
+def same_paper(a: str, ya, b: str, yb) -> bool:
+    """a, b: normalised titles. Same paper if identical; or one is the other plus a subtitle; or nearly
+    identical (a typo, one changed word) - the last two only when the years are within 2."""
+    if a == b:
+        return True
+    if not a or not b or abs((ya or yb or 0) - (yb or ya or 0)) > 2:
+        return False
+    s_, l_ = (a, b) if len(a) <= len(b) else (b, a)
+    if len(s_) >= 18 and l_.startswith(s_):
+        return True
+    if abs(len(a) - len(b)) <= 0.1 * len(l_) and len(s_) >= 18:
+        sm = difflib.SequenceMatcher(None, a, b)
+        return sm.real_quick_ratio() >= 0.92 and sm.quick_ratio() >= 0.92 and sm.ratio() >= 0.92
+    return False
+
+
+def clean_title(t: str | None) -> str:
+    return norm_title(re.sub(r"<[^>]+>", " ", re.sub(r"\$[^$]*\$", " ", t or "")))
+
+
+def title_finder(items: list[dict], title=lambda x: x["title"], year=lambda x: x.get("year")):
+    """find(title, year) -> the item with the same paper title (exact, subtitle or near-identical), or None."""
+    keyed = [(clean_title(title(x)), year(x), x) for x in items]
+    exact = {k: x for k, _, x in keyed if k}
+    def find(t, y):
+        k = clean_title(t)
+        if k in exact:
+            return exact[k]
+        return next((x for kk, yy, x in keyed if same_paper(k, y, kk, yy)), None)
+    return find
+
+
+def true_year(w: dict) -> int | None:
+    """A paper with a fair share of its citations two or more years before its listed year is an older paper with a later date
+    (often a repository copy uploaded years afterwards): its first citation year is closer to the truth."""
+    cby, y0 = w.get("cby") or {}, w.get("year")
+    if not y0 or not cby:
+        return y0
+    early = {int(y): n for y, n in cby.items() if int(y) < y0 - 1}
+    # a stray early citation is just noise in the data; a real share of them is not
+    if sum(early.values()) >= 2 and sum(early.values()) >= 0.2 * sum(cby.values()):
+        return min(early)
+    return y0
+
+
+def age_profile(works: list[dict], this_year: int) -> dict[int, float]:
+    """Share of a paper's citations received in each year after publication (0 = the year it came out),
+    from every OpenAlex paper with yearly counts. Used to spread citations of papers OpenAlex doesn't have."""
+    tot: Counter = Counter()
+    for w in works:
+        if w.get("year") and w["year"] >= this_year - 12:
+            for y, n in w.get("cby", {}).items():
+                if int(y) >= w["year"]:
+                    tot[int(y) - w["year"]] += n
+    return {k: v for k, v in tot.items()}
+
+
+def spread(cites: int, year: int | None, profile: dict[int, float], this_year: int) -> dict[str, float]:
+    if not cites or not year or year > this_year or not profile:
+        return {}
+    ages = range(0, this_year - year + 1)
+    wts = {k: profile.get(k, 0) for k in ages}
+    wts[this_year - year] *= max(dt.date.today().timetuple().tm_yday / 365, 0.15)  # this year isn't over
+    z = sum(wts.values())
+    return {str(year + k): cites * v / z for k, v in wts.items() if v} if z else {}
+
+
+def apply_scholar(om: dict, prof: dict, oa_works: list[dict], this_year: int, since: int | None = None,
+                  profile: dict | None = None) -> None:
+    """Replace a member's headline numbers with their Google Scholar profile's.
+    With `since`, the profile has been cut down to papers from that year on: totals, h-index and
+    citations per year are then worked out from those papers (Scholar only gives them for all papers)."""
     arts = [a for a in prof["articles"] if a.get("title")]
-    oa_by_title = {norm_title(w["title"]): w for w in oa_works}
+    find = title_finder(oa_works)
     papers = []
     for i, a in enumerate(arts):
-        oa = oa_by_title.get(norm_title(a["title"]))
+        oa = find(a["title"], a.get("year"))
         cby = {}
-        if oa and oa["cby"]:  # borrow OpenAlex's yearly pattern (scaled) to estimate citation pace
-            f = a["cites"] / oa["cited_by_count"] if oa["cited_by_count"] else 1
+        if oa and oa["cby"] and oa["cited_by_count"]:  # borrow OpenAlex's yearly pattern (scaled) for citation pace
+            # (since view: recent papers, whose yearly counts are complete, so scale to add up exactly)
+            f = a["cites"] / (sum(oa["cby"].values()) if since else oa["cited_by_count"])
             cby = {y: n * f for y, n in oa["cby"].items()}
+        elif since and profile:   # 'since' view: no yearly pattern - spread like a typical team paper
+            cby = spread(a["cites"], a.get("year"), profile, this_year)
         papers.append({"id": f"S{i}", "title": a["title"], "year": a["year"], "cited_by_count": a["cites"],
                        "venue": a.get("publication"), "link": a.get("link"), "authors": a.get("authors"),
                        "cby": cby})
     cites = [p["cited_by_count"] for p in papers]
     graph = {str(g["year"]): g["citations"] for g in (prof.get("cited_by") or {}).get("graph") or []
              if g.get("year")}
+    if not graph:   # 'since' view: citations per year to these papers (OpenAlex's pattern, scaled to Scholar's counts)
+        graph = {y: round(n) for y, n in per_year(papers).items() if round(n) and int(y) >= (since or 0)}
     total = scholar_metric(prof, "citations") or sum(cites)
     last, prev = graph.get(str(this_year - 1), 0), graph.get(str(this_year - 2), 0)
     years = sorted({int(y) for y in graph} | {this_year})
-    years = list(range(max(min(years), this_year - 14), this_year + 1))
+    years = list(range(max(min(years), this_year - 14, since or 0), this_year + 1))
     om.update({
         "source": "Google Scholar", "scholar_name": prof.get("name"), "scholar_fetched": prof.get("fetched_at"),
         "works": len(papers), "citations": total,
@@ -508,7 +590,10 @@ def apply_scholar(om: dict, prof: dict, oa_works: list[dict], this_year: int) ->
 
 
 
-def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
+def build(cfg: dict, raw: dict, scholar: dict | None = None, since: int | None = None,
+          year_fix: dict | None = None) -> dict:
+    """since: only papers published in or after that year (the site's '2020 onwards' view).
+    year_fix: {paper key: year} corrections from venues.yaml, so a corrected year decides the cut."""
     scholar = scholar or {}
     st = cfg.get("settings", {})
     excl_types = set(st.get("exclude_types", []))
@@ -602,9 +687,35 @@ def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
         dropped = filter_by_scholar(works, members, scholar, id2slug)
         works = {k: w for k, w in works.items() if w["lab"]}
 
+    works_all = dict(works)
+    if not since:   # flag older work carrying a later date, so 'recent' lists on the site can skip it
+        for w in works.values():
+            ty = true_year(w)
+            if ty and w["year"] and ty < w["year"]:
+                w["older"] = ty
+    if since:
+        n_old = 0
+        for w in works.values():
+            fix = (year_fix or {}).get(paper_key(w.get("doi"))) or (year_fix or {}).get(paper_key(w["title"]))
+            if fix:
+                w["year"] = fix
+            elif w["year"] and true_year(w) < w["year"]:
+                n_old += (w["year"] >= since > true_year(w))
+                w["year"] = true_year(w)
+        works = {k: w for k, w in works.items() if (w["year"] or 0) >= since}
+        if n_old:
+            print(f"  {n_old} paper(s) dated {since}+ by OpenAlex were cited years earlier (a later repository copy) "
+                  f"and are counted as older work")
+
     all_years = sorted({int(y) for w in works.values() for y in w["cby"]} |
                        {w["year"] for w in works.values() if w["year"]})
-    chart_years = [y for y in all_years if y >= this_year - 10] or [this_year]
+    chart_years = [y for y in all_years if y >= max(this_year - 10, since or 0)] or [this_year]
+
+    profile, team_gs = {}, None
+    if since:
+        profile = age_profile(list(works.values()), this_year)
+        team_arts = [a for p in scholar.values() if p for a in p.get("articles") or [] if a.get("title")]
+        team_gs = title_finder(sorted(team_arts, key=lambda a: -(a.get("cites") or 0)))
 
     # --- per member
     out_members = []
@@ -654,7 +765,26 @@ def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
         om["openalex"] = list(om["openalex"]) + om["openalex_extra"]
         prof = scholar.get(scholar_id(m.get("scholar")) or "")
         if prof and prof.get("articles") is not None:
-            apply_scholar(om, prof, mine, this_year)
+            if since:
+                find_all = title_finder([w for w in works_all.values() if m["slug"] in w["lab"]])
+                def year_of(a):
+                    oa = find_all(a["title"], a.get("year"))
+                    ty = true_year({"year": a.get("year"), "cby": oa["cby"]}) if oa else a.get("year")
+                    return min(a.get("year") or 0, ty or 0) if a.get("year") else None
+                arts = [a for a in prof["articles"] if (year_of(a) or 0) >= since]
+                fallback = not arts and bool(mine)
+                if fallback:   # Scholar profile not kept up to date (nothing since that year): use OpenAlex,
+                    # with a co-author's Scholar count for the paper where there is one
+                    arts = [{"title": w["title"], "year": w["year"],
+                             "cites": max(w["cited_by_count"], (team_gs(w["title"], w["year"]) or {}).get("cites") or 0),
+                             "publication": w["venue"], "link": w.get("doi")} for w in mine]
+                apply_scholar(om, {"name": prof.get("name"), "fetched_at": prof.get("fetched_at"), "articles": arts},
+                              mine, this_year, since, profile)
+                if fallback:
+                    om["source"] = "OpenAlex"
+                    om["scholar_outdated"] = True
+            else:
+                apply_scholar(om, prof, mine, this_year)
 
     # --- lab level (each paper counted once)
     lab_works = list(works.values())
@@ -663,7 +793,7 @@ def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
     lab_total = sum(lab_cites)
     lab_source, lab_n = "OpenAlex", len(lab_works)
     lab_years = chart_years
-    if out_members and all(om["source"] == "Google Scholar" for om in out_members):
+    if out_members and all("scholar_papers" in om for om in out_members):
         best: dict[str, int] = {}
         for om in out_members:
             for p in om["scholar_papers"]:
@@ -673,7 +803,7 @@ def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
         lab_total, lab_n, lab_source = sum(lab_cites), len(best), "Google Scholar"
         lab_cby = dict(sorted(sum((Counter(om["cites_by_year"]) for om in out_members), Counter()).items()))
         lab_years = sorted({int(y) for y in lab_cby} | {this_year})
-        lab_years = [y for y in lab_years if y >= this_year - 14]
+        lab_years = [y for y in lab_years if y >= max(this_year - 14, since or 0)]
     venues = Counter((w["venue"], w["venue_type"]) for w in lab_works if w["venue"])
 
     # --- collaboration network (lab members + everyone they co-authored with)
@@ -722,6 +852,7 @@ def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
         "generated_at": raw.get("fetched_at") or dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "source": "OpenAlex",
         "lab": cfg.get("lab", {}),
+        "period": {"from": since} if since else {},
         "years": chart_years,
         "network_max_authors": max_auth,
         "summary": {
@@ -748,7 +879,7 @@ def build(cfg: dict, raw: dict, scholar: dict | None = None) -> dict:
 
 
 def enrich_data(data: dict, raw: dict, cfg: dict, venues_path: Path, data_dir: Path, oa_cache: dict,
-                key: str | None, online: bool) -> None:
+                key: str | None, online: bool, review: bool = True) -> None:
     """Venue types and quality tiers, Scholar citations per paper, research themes (scripts/enrich.py)."""
     try:
         import enrich
@@ -769,7 +900,7 @@ def enrich_data(data: dict, raw: dict, cfg: dict, venues_path: Path, data_dir: P
         except Exception as e:
             print(f"  ! venue impact lookup failed: {e}", file=sys.stderr)
     for step, fn in [("Scholar citations", lambda: enrich.attach_scholar(data, norm_title)),
-                     ("venues", lambda: enrich.apply_venues(data, raw_sources, venues_path, data_dir, st, impact, online)),
+                     ("venues", lambda: enrich.apply_venues(data, raw_sources, venues_path, data_dir, st, impact, online, review=review)),
                      ("themes", lambda: enrich.build_themes(data, st, norm_title))]:
         try:
             fn()
@@ -853,8 +984,54 @@ def main():
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cache_path.write_text(json.dumps(oa_cache, separators=(",", ":"), ensure_ascii=False))
     data = build(cfg, raw, scholar)
-    citing = raw.get("citing")
-    old = oa_cache.get("citing")
+    data["citing"] = citing_for(data, raw.get("citing"), oa_cache, "citing", key, args, slow_days, st, Path(args.out) / "data.json")
+    if not data["citing"]:
+        data.pop("citing")
+    venues_path = Path(args.config).parent / "venues.yaml"
+    enrich_data(data, raw, cfg, venues_path, Path(args.scholar_cache).parent,
+                oa_cache, key, online=not args.from_raw)
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "data.json").write_text(json.dumps(data, separators=(",", ":")))
+    hist = update_history(data, out / "history.json")
+    s = data["summary"]
+    print(f"Wrote {out/'data.json'}: {s['members']} members, {s['works']} papers, "
+          f"{s['citations']} citations, lab h-index {s['h']} [{s['source']}]; {len(hist)} monthly snapshot(s)")
+
+    # --- the same site, counting only papers published from a given year (lab.yaml: lab -> since)
+    since = (cfg.get("lab") or {}).get("since") or {}
+    since_year = int(since.get("year") if isinstance(since, dict) else since or 0)
+    if since_year:
+        try:
+            year_fix = {}
+            try:   # corrected years in venues.yaml ('papers:') decide which side of the cut a paper falls
+                vy = yaml.safe_load(venues_path.read_text()) or {}
+                year_fix = {paper_key(k): int(v["year"]) for k, v in (vy.get("papers") or {}).items()
+                            if isinstance(v, dict) and v.get("year")}
+            except Exception:
+                pass
+            ds = build(cfg, raw, scholar, since=since_year, year_fix=year_fix)
+            ds["citing"] = citing_for(ds, raw.get("citing_since"), oa_cache, "citing_since", key, args, slow_days, st,
+                                      out / "data-since.json")
+            if not ds["citing"]:
+                ds.pop("citing")
+            enrich_data(ds, raw, cfg, venues_path, Path(args.scholar_cache).parent, oa_cache, key,
+                        online=False, review=False)
+            (out / "data-since.json").write_text(json.dumps(ds, separators=(",", ":")))
+            update_history(ds, out / "history-since.json")
+            s = ds["summary"]
+            print(f"Wrote {out/'data-since.json'}: papers from {since_year} on - {s['works']} papers, {s['citations']} citations")
+        except Exception as e:   # the extra view must never stop the main site from updating
+            import traceback; traceback.print_exc()
+            print(f"::warning::the 'since {since_year}' view could not be built ({e}); the main site is unaffected.")
+    if not args.from_raw:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(json.dumps(oa_cache, separators=(",", ":"), ensure_ascii=False))
+
+
+def citing_for(data: dict, citing, oa_cache: dict, ck: str, key, args, slow_days: int, st: dict, prev_path: Path):
+    """Countries citing the papers in `data`, cached in openalex_cache.json under `ck`."""
+    old = oa_cache.get(ck)
     fresh = old and (dt.date.today() - dt.date.fromisoformat(old.get("checked", "2000-01-01"))).days < slow_days
     if citing is None and fresh:
         citing = old
@@ -863,30 +1040,16 @@ def main():
         try:
             citing = fetch_citing_countries(OpenAlex(key), [w["id"] for w in data["works"]])
             citing["checked"] = dt.date.today().isoformat()
-            oa_cache["citing"] = citing
+            oa_cache[ck] = citing
         except Exception as e:  # never lose the map over a failed lookup: keep the last good one
             print(f"  ! citing-countries lookup failed ({e}); keeping the previous map data", file=sys.stderr)
             citing = old
     if citing is None:  # last resort: the map from the currently published data
-        prev = Path(args.out) / "data.json"
-        if prev.exists():
-            citing = json.loads(prev.read_text()).get("citing")
+        if prev_path.exists():
+            citing = json.loads(prev_path.read_text()).get("citing")
             if citing:
-                oa_cache.setdefault("citing", {**citing, "checked": "2000-01-01"})
-    if citing:
-        data["citing"] = citing
-    enrich_data(data, raw, cfg, Path(args.config).parent / "venues.yaml", Path(args.scholar_cache).parent,
-                oa_cache, key, online=not args.from_raw)
-    if not args.from_raw:
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        cache_path.write_text(json.dumps(oa_cache, separators=(",", ":"), ensure_ascii=False))
-    out = Path(args.out)
-    out.mkdir(parents=True, exist_ok=True)
-    (out / "data.json").write_text(json.dumps(data, separators=(",", ":")))
-    hist = update_history(data, out / "history.json")
-    s = data["summary"]
-    print(f"Wrote {out/'data.json'}: {s['members']} members, {s['works']} papers, "
-          f"{s['citations']} citations, lab h-index {s['h']} [{s['source']}]; {len(hist)} monthly snapshot(s)")
+                oa_cache.setdefault(ck, {**citing, "checked": "2000-01-01"})
+    return citing
 
 
 if __name__ == "__main__":

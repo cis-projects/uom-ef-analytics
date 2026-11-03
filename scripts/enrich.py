@@ -348,7 +348,7 @@ def load_paper_overrides(path: Path) -> dict:
 
 
 def apply_venues(data: dict, raw_sources: dict, venues_path: Path, data_dir: Path, settings: dict, impact: dict,
-                 online: bool = True) -> None:
+                 online: bool = True, review: bool = True) -> None:
     """Give each work a canonical venue, output type and quality tier; add data['venues']."""
     aliases, listed = load_venue_list(venues_path)
     rank_dir = data_dir / "rankings"
@@ -462,7 +462,8 @@ def apply_venues(data: dict, raw_sources: dict, venues_path: Path, data_dir: Pat
         v["names"] = sorted(v["names"])
     data["venues"] = venues
     data["tier_order"] = TIER_ORDER
-    write_review_file(data_dir / "venues_to_review.yaml", venues, listed)
+    if review:   # only for the full build, not the 'since' view
+        write_review_file(data_dir / "venues_to_review.yaml", venues, listed)
 
 
 def write_review_file(path: Path, venues: dict, listed: dict) -> None:

@@ -262,6 +262,10 @@ input[type=search] { min-width: 240px; flex: 1 1 240px; max-width: 420px; }
 .top h1 { font-size: 22px; margin: 2px 0 2px; letter-spacing: -.015em; line-height: 1.25; }
 .top h1 .sub { display: block; font-weight: 500; color: var(--text-2); font-size: 19px; }
 .hd-lede { margin: 4px 0 0 !important; color: var(--text-2); font-size: 14px !important; max-width: 760px; }
+.hd-period { margin: 10px 0 0; display: flex; gap: 10px 12px; align-items: center; flex-wrap: wrap; max-width: 820px; font-size: 13px; color: var(--text-2); }
+.hd-period .seg { flex: none; }
+.hd-period .seg button { padding: 4px 10px; font-size: 12.5px; }
+.period-note { flex: 1 1 320px; min-width: 0; line-height: 1.45; }
 .hd-links { display: flex; gap: 14px; align-items: center; font-size: 13px; flex-wrap: wrap; }
 .btn { border: 1px solid var(--border); border-radius: 8px; padding: 6px 11px; color: var(--text); background: var(--surface); font-size: 13px; }
 .btn:hover { border-color: var(--accent); text-decoration: none; }
@@ -304,3 +308,23 @@ input[type=search] { min-width: 240px; flex: 1 1 240px; max-width: 420px; }
 .top { position: relative; }
 .top-inner > div.hd { padding-bottom: 6px; }
 .tabs { max-width: 100%; }
+
+/* venues: top-ranked venues */
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { font: inherit; font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-2); cursor: pointer; }
+.chip span { font-weight: 400; color: var(--muted); margin-left: 2px; }
+.chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+.chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tv-grid { column-count: 2; column-gap: 16px; margin-top: 8px; }
+.tv { break-inside: avoid; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 0 0 16px; background: var(--surface); }
+.tv-h { display: flex; gap: 10px; align-items: flex-start; }
+.tv-n { font-weight: 600; font-size: 14px; line-height: 1.3; }
+.tv-k { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.tv ul { list-style: none; margin: 10px 0 0; padding: 0; }
+.tv li { display: flex; gap: 10px; padding: 7px 0; border-top: 1px dashed var(--border); font-size: 13px; }
+.tv li .t { line-height: 1.35; }
+.tv li .m { color: var(--text-2); font-size: 12px; margin-top: 2px; }
+.tv-y { flex: none; width: 36px; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; padding-top: 1px; }
+@media (max-width: 800px) { .tv-grid { column-count: 1; } }
+.tv-more { text-align: center; }
+.tv-more:empty { display: none; }
