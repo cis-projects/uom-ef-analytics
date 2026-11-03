@@ -330,3 +330,11 @@ input[type=search] { min-width: 240px; flex: 1 1 240px; max-width: 420px; }
 @media (max-width: 800px) { .tv-grid { column-count: 1; } }
 .tv-more { text-align: center; }
 .tv-more:empty { display: none; }
+
+/* until the data has loaded */
+body.loading main .tab, body.loading #lab-updated, body.loading #lab-expert { display: none !important; }
+body:not(.loading) #loading { display: none; }
+.loading-msg { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 40vh; color: var(--muted); font-size: 14px; }
+.spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }

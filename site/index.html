@@ -3,7 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lab Scholar Dashboard</title>
+  <title>School of Computing and Information Systems, Education-Focused Team · Publications</title>
+  <meta name="description" content="Publications, citations, venues and collaborations of the Education-Focused Team, School of Computing and Information Systems, The University of Melbourne.">
+  <meta property="og:title" content="School of Computing and Information Systems, Education-Focused Team">
+  <meta property="og:description" content="Publications, citations, venues and collaborations of the team, The University of Melbourne.">
+  <meta property="og:type" content="website">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" defer></script>
@@ -12,13 +16,13 @@
   <script src="https://cdn.jsdelivr.net/npm/d3-cloud@1.2.7/build/d3.layout.cloud.js" defer></script>
   <script src="app.js" defer></script>
 </head>
-<body>
+<body class="loading">
   <header class="top">
     <div class="wrap top-inner">
       <div class="hd">
         <div>
-          <div class="hd-inst" id="lab-inst"></div>
-          <h1 id="lab-name">Lab dashboard</h1>
+          <div class="hd-inst" id="lab-inst">The University of Melbourne</div>
+          <h1 id="lab-name">School of Computing and Information Systems<span class="sub">Education-Focused Team</span></h1>
           <p id="lab-desc" class="hd-lede"></p>
           <p id="lab-period" class="hd-period" hidden></p>
           <p id="lab-contact" class="hd-contact" hidden></p>
@@ -36,6 +40,7 @@
   </header>
 
   <main class="wrap">
+    <div id="loading" class="loading-msg" role="status"><span class="spin" aria-hidden="true"></span>Loading publications and citations…</div>
     <!-- ================= OVERVIEW ================= -->
     <section id="tab-overview" class="tab">
       <div class="sec"><h2>At a glance</h2></div>

@@ -20,12 +20,14 @@
   const sinceCfg = (d) => { const c = (d?.lab || {}).since; return c && typeof c === "object" ? c : { year: c }; };
   const getJson = (f) => fetch(f, { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   (async () => {
+    // the two small history files load alongside the main data instead of after it
+    const hist = { all: getJson("data/history.json"), since: QP === "all" ? null : getJson("data/history-since.json") };
     let d = QP === "all" ? null : await getJson("data/data-since.json");
     if (d && sinceCfg(d).default) DEFAULT_FROM = d.period?.from || Number(sinceCfg(d).year) || null;
     if (d && (Number(QP) || DEFAULT_FROM)) FROM = d.period?.from || Number(QP);
     else d = null;
     if (QP && QP !== "all" && !FROM) history.replaceState(null, "", location.pathname + location.hash);  // not built yet
-    const h = await getJson(FROM ? "data/history-since.json" : "data/history.json");
+    const h = await (FROM ? hist.since : hist.all);
     d = d || await getJson("data/data.json");
     if (!d) throw new Error("data.json not found");
     return [d, h || []];
@@ -38,10 +40,12 @@
     D.members.forEach((m) => (members[m.slug] = m));
     init();
   }).catch((e) => {
+    document.body.classList.remove("loading");
     $("main").innerHTML = `<div class="card"><h3>No data yet</h3><p class="muted">${esc(e.message)}. Run <code>python scripts/fetch.py</code> (or the GitHub Action) to generate it.</p></div>`;
   });
 
   function init() {
+    document.body.classList.remove("loading");
     const lab = D.lab || {};
     document.title = lab.name ? `${lab.name} · Publications` : document.title;
     const [main, ...rest] = String(lab.name || "Lab dashboard").split(/,\s*/);
