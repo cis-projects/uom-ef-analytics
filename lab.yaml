@@ -7,6 +7,8 @@ lab:
   institution: "The University of Melbourne"
   expert: https://findanexpert.unimelb.edu.au/group/2014439-education-focused
   default_member: "Eduardo Oliveira"
+  year: 2020
+  reason: "when education-focused roles in the School became more clearly defined"
 
 settings:
   # OpenAlex work types to leave out of every count
