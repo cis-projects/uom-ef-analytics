@@ -13,19 +13,25 @@
   const rendered = {};
 
   // ------------------------------------------------------------ load
-  // ?from=2020 shows the 'since' view (data-since.json, built when lab.yaml sets lab -> since)
-  let FROM = Number(new URLSearchParams(location.search).get("from")) || null;
+  // The 'since' view (data-since.json) is built when lab.yaml sets lab -> since. ?from=2020 asks for it,
+  // ?from=all for every year; with neither, lab -> since -> default decides which one opens.
+  const QP = new URLSearchParams(location.search).get("from");
+  let FROM = null, DEFAULT_FROM = null;
+  const sinceCfg = (d) => { const c = (d?.lab || {}).since; return c && typeof c === "object" ? c : { year: c }; };
   const getJson = (f) => fetch(f, { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   (async () => {
-    let d = FROM ? await getJson("data/data-since.json") : null;
-    if (FROM && !d) { FROM = null; history.replaceState(null, "", location.pathname + location.hash); }  // not built yet
-    if (FROM) FROM = d.period?.from || FROM;
+    let d = QP === "all" ? null : await getJson("data/data-since.json");
+    if (d && sinceCfg(d).default) DEFAULT_FROM = d.period?.from || Number(sinceCfg(d).year) || null;
+    if (d && (Number(QP) || DEFAULT_FROM)) FROM = d.period?.from || Number(QP);
+    else d = null;
+    if (QP && QP !== "all" && !FROM) history.replaceState(null, "", location.pathname + location.hash);  // not built yet
     const h = await getJson(FROM ? "data/history-since.json" : "data/history.json");
     d = d || await getJson("data/data.json");
     if (!d) throw new Error("data.json not found");
     return [d, h || []];
   })().then(([d, h]) => {
     D = d; H = h;
+    if (sinceCfg(D).default) DEFAULT_FROM = Number(sinceCfg(D).year) || DEFAULT_FROM;
     THIS_YEAR = Number((D.generated_at || "").slice(0, 4)) || new Date().getFullYear();
     LAST_YEAR = THIS_YEAR - 1;
     D.works.forEach((w) => (byId[w.id] = w));
@@ -62,6 +68,14 @@
       $("#lab-desc").textContent = `${D.members.length} academics publishing on ${th.join(" and ")}, and more: ${fmt(s.works)} papers${FROM ? ` since ${FROM}` : ""}, ${fmt(s.citations)} citations${nCountries ? `, cited in ${nCountries} countries` : ""}.`;
     }
     renderPeriod();
+    // lab.yaml: lab -> maintainer: {name, email}
+    const mt = lab.maintainer;
+    if (mt && (mt.name || mt.email)) {
+      const who = mt.email ? `<a href="mailto:${esc(mt.email)}">${esc(mt.name || mt.email)}</a>` : esc(mt.name);
+      $("#lab-contact").innerHTML = `Maintained by ${who}${mt.name && mt.email ? ` (${esc(mt.email)})` : ""}. ` +
+        `Please get in touch with any questions or requests to update this page.`;
+      $("#lab-contact").hidden = false;
+    }
     if (FROM) $("#foot").insertAdjacentHTML("beforeend", ` <br>${FROM} onwards: only papers published in or after ${FROM}, with their citations. ` +
       `Citations per year are estimated from OpenAlex's yearly pattern for each paper, scaled to its Google Scholar count. ` +
       `Papers that OpenAlex dates ${FROM} or later but that were already being cited years before (usually a later repository copy) count as older work.`);
@@ -84,8 +98,11 @@
         : `Showing all work published by the individuals listed here. To see only work published from ${y} onwards${why ? `, ${esc(why)}` : ""}, switch to <b>${y} onwards</b>.`}</span>`;
     el.hidden = false;
     el.querySelectorAll("button").forEach((b) => (b.onclick = () => {
-      if ((b.dataset.from || null) == (FROM ? String(FROM) : null)) return;
-      location.href = location.pathname + (b.dataset.from ? `?from=${b.dataset.from}` : "") + location.hash;
+      const want = Number(b.dataset.from) || null;
+      if (want === FROM) return;
+      // the default view gets the plain address; the other one says so in the link (?from=2020 or ?from=all)
+      const q = want === DEFAULT_FROM ? "" : `?from=${want || "all"}`;
+      location.href = location.pathname + q + location.hash;
     }));
   }
 

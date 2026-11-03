@@ -266,6 +266,8 @@ input[type=search] { min-width: 240px; flex: 1 1 240px; max-width: 420px; }
 .hd-period .seg { flex: none; }
 .hd-period .seg button { padding: 4px 10px; font-size: 12.5px; }
 .period-note { flex: 1 1 320px; min-width: 0; line-height: 1.45; }
+.hd-contact { margin: 8px 0 0 !important; font-size: 12.5px !important; color: var(--muted); max-width: 820px; }
+.hd-contact a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .hd-links { display: flex; gap: 14px; align-items: center; font-size: 13px; flex-wrap: wrap; }
 .btn { border: 1px solid var(--border); border-radius: 8px; padding: 6px 11px; color: var(--text); background: var(--surface); font-size: 13px; }
 .btn:hover { border-color: var(--accent); text-decoration: none; }
