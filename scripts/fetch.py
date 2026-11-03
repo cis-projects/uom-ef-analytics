@@ -947,7 +947,16 @@ def main():
                   f"cites={c.get('cited_by_count', 0):<6} orcid={short(c.get('orcid')) or '-':<20} {insts}")
         return
 
-    cfg = yaml.safe_load(Path(args.config).read_text())
+    try:
+        cfg = yaml.safe_load(Path(args.config).read_text())
+    except yaml.YAMLError as e:   # explain hand-editing slips (usually indentation) in plain words
+        mark = getattr(e, "problem_mark", None)
+        where = f"line {mark.line + 1}" if mark else "somewhere"
+        print(f"::error file=lab.yaml,line={mark.line + 1 if mark else 1}::lab.yaml can't be read ({where}). "
+              f"This is usually indentation: lines under the same heading need exactly the same number of spaces, "
+              f"e.g. 2 for name/since/maintainer and 4 for year/reason/default.")
+        print(f"Details: {e}")
+        sys.exit(1)
     if args.from_raw:
         raw = json.loads(Path(args.from_raw).read_text())
     else:
