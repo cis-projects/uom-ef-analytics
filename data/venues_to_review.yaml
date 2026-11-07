@@ -3,7 +3,7 @@
 venues:
   - {name: "Enterprise Architecture Professional Journal", type: journal, reviewed: false}  # 29 papers (28 in the last 5 years)
   - {name: "Australasian Association for Engineering Education Annual Conference", type: conference, reviewed: false}  # 18 papers (17 in the last 5 years)
-  - {name: "ASCILITE Publications", label: "ASCILITE (conference proceedings)", type: conference, reviewed: false}  # 17 papers (15 in the last 5 years)
+  - {name: "ASCILITE Publications", label: "ASCILITE (conference proceedings)", type: conference, reviewed: false}  # 17 papers (15 in the last 5 years) · OpenAlex says journal
   - {name: "Springer eBooks", type: book, reviewed: false}  # 16 papers (13 in the last 5 years)
   - {name: "Australasian Conference on Information Systems", type: conference, reviewed: false}  # 14 papers (9 in the last 5 years)
   - {name: "Swinburne figshare (Swinburne University of Technology)", type: preprint, reviewed: false}  # 33 papers (5 in the last 5 years)
@@ -14,12 +14,13 @@ venues:
   - {name: "Pacific Journal of Technology Enhanced Learning", type: journal, reviewed: false}  # 5 papers (5 in the last 5 years)
   - {name: "Minerva Access (University of Melbourne)", type: preprint, reviewed: false}  # 8 papers (4 in the last 5 years)
   - {name: "European Journal of Engineering Education", type: journal, reviewed: false}  # 7 papers (4 in the last 5 years)
-  - {name: "arXiv (Cornell University)", type: preprint, reviewed: false}  # 7 papers (4 in the last 5 years)
+  - {name: "arXiv (Cornell University)", type: preprint, reviewed: false}  # 6 papers (4 in the last 5 years)
   - {name: "Australian Conference on Computer-Human Interaction (OzCHI)", type: conference, rank: "Australasian", reviewed: false}  # 8 papers (3 in the last 5 years) · rank from ICORE2026 acronym OZCHI
   - {name: "SEFI Annual Conference", type: conference, reviewed: false}  # 4 papers (3 in the last 5 years)
   - {name: "ACM SIGCAS/SIGCHI Conference on Computing and Sustainable Societies (COMPASS)", type: conference, rank: "C", reviewed: false}  # 3 papers (3 in the last 5 years) · rank from ICORE2026 acronym COMPASS
   - {name: "Information Systems Education Journal", type: journal, rank: "C", reviewed: false}  # 3 papers (3 in the last 5 years) · rank from CORE journals (ERA2010)
   - {name: "International Conference on Learning Analytics and Knowledge (LAK)", type: conference, rank: "A", reviewed: false}  # 3 papers (3 in the last 5 years) · rank from venues.yaml
+  - {name: "Koli Calling International Conference on Computing Education Research", type: conference, rank: "B", reviewed: false}  # 3 papers (3 in the last 5 years) · rank from venues.yaml
   - {name: "Proceedings of the ISCAP Conference ISSN", type: conference, reviewed: false}  # 3 papers (3 in the last 5 years)
   - {name: "Research in Engineering Education Symposium (REES)", type: conference, reviewed: false}  # 3 papers (3 in the last 5 years)
   - {name: "IEEE International Conference on Teaching, Assessment, and Learning for Engineering", type: conference, reviewed: false}  # 5 papers (2 in the last 5 years)
@@ -121,7 +122,6 @@ venues:
   - {name: "Journal of Medical Internet Research", type: journal, rank: "Q1", reviewed: false}  # 1 paper (1 in the last 5 years) · rank from SCImago
   - {name: "Journal of Mental Health", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "Journal of Studies in International Education", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
-  - {name: "Koli Calling International Conference on Computing Education Research", type: conference, rank: "B", reviewed: false}  # 1 paper (1 in the last 5 years) · rank from venues.yaml
   - {name: "Learning Letters", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "Lecture notes in educational technology", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · OpenAlex says book
   - {name: "Mathematics", type: journal, rank: "Q2", reviewed: false}  # 1 paper (1 in the last 5 years) · rank from SCImago
@@ -152,10 +152,10 @@ venues:
   - {name: "IGI Global eBooks", type: book, reviewed: false}  # 6 papers (0 in the last 5 years)
   - {name: "Asia-Pacific Software Engineering Conference (APSEC)", type: conference, rank: "C", reviewed: false}  # 5 papers (0 in the last 5 years) · rank from ICORE2026 acronym APSEC
   - {name: "The International Journal of Knowledge Culture and Change Management Annual Review", type: journal, reviewed: false}  # 5 papers (0 in the last 5 years)
-  - {name: "The MIT Press eBooks", type: book, reviewed: false}  # 5 papers (0 in the last 5 years)
   - {name: "Annual Conference for the Australasian Association for Engineering", type: conference, reviewed: false}  # 4 papers (0 in the last 5 years)
   - {name: "Expert Systems with Applications", type: journal, rank: "B", reviewed: false}  # 4 papers (0 in the last 5 years) · rank from CORE journals (CORE2020)
   - {name: "Journal of Systems and Software", type: journal, rank: "A", reviewed: false}  # 4 papers (0 in the last 5 years) · rank from CORE journals (CORE2020)
+  - {name: "The MIT Press eBooks", type: book, reviewed: false}  # 4 papers (0 in the last 5 years)
   - {name: "Annual Conference of the Australasian Association for Engineering", type: conference, reviewed: false}  # 3 papers (0 in the last 5 years)
   - {name: "Birkhäuser-Verlag eBooks", type: book, reviewed: false}  # 3 papers (0 in the last 5 years)
   - {name: "Computational Intelligence", type: journal, rank: "B", reviewed: false}  # 3 papers (0 in the last 5 years) · rank from CORE journals (CORE2020)
@@ -231,7 +231,6 @@ venues:
   - {name: "Conference on Software Engineering Education", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years) · maybe ICORE: Conference on Software Engineering Education and Training (previously Conference is Software Engineering Education, CSEE, changed in 1997) (C)
   - {name: "Cooperative Information Agents", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "DOAJ (DOAJ: Directory of Open Access Journals)", type: preprint, reviewed: false}  # 1 paper (0 in the last 5 years)
-  - {name: "Data Archiving and Networked Services (DANS)", type: preprint, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Defense Technical Information Center (DTIC)", type: preprint, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Designing Interactive Systems Conference", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "ESD/SMI Expert Systems Conference", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
@@ -362,6 +361,7 @@ venues:
   - {name: "Proceedings of the international conference on Artificial intelligence", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years) · maybe ICORE: International Joint Conference on Artificial Intelligence (A*)
   - {name: "Proceedings of workshop at the Second International Joint Conference on", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Research and practice in technology enhanced learning", type: journal, rank: "Q1", reviewed: false}  # 1 paper (0 in the last 5 years) · rank from SCImago
+  - {name: "Research portal (Tilburg University)", type: preprint, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "ResearchSpace (University of Auckland)", type: preprint, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Revista Brasileira de Informática na Educação", type: journal, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Robotics and Autonomous Systems", type: journal, rank: "B", reviewed: false}  # 1 paper (0 in the last 5 years) · rank from CORE journals (CORE2020)
@@ -377,7 +377,7 @@ venues:
   - {name: "The International Journal of Human Resource Management", type: journal, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "The third Australian Workshop on Knowledge Acquisition, in conjunction with", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Transactions in GIS", type: journal, rank: "B", reviewed: false}  # 1 paper (0 in the last 5 years) · rank from CORE journals (CORE2020)
-  - {name: "UWA Profiles and Research Repository (UWA)", type: preprint, reviewed: false}  # 1 paper (0 in the last 5 years)
+  - {name: "UWA Profiles and Research Repository (University of Western Australia)", type: preprint, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "University of Texas Austin -Portugal Annual Conference", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "WSEAS Transactions on Computers", type: journal, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Work presented at ILPS93 Post Conference Workshop on Methodologies for", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
