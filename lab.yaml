@@ -23,6 +23,7 @@ settings:
   # Papers with more authors than this are left out of the collaboration network
   # (huge consortium papers would otherwise connect everyone to everyone)
   network_max_authors: 50
+  scholar_refresh_days: 0
 
 # One entry per person. For each member give at least ONE of:
 #   openalex: their OpenAlex author ID(s), e.g. A5023888391  (most reliable; a list is fine
