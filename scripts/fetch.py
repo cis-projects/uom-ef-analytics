@@ -543,7 +543,7 @@ def spread(cites: int, year: int | None, profile: dict[int, float], this_year: i
 
 
 def apply_scholar(om: dict, prof: dict, oa_works: list[dict], this_year: int, since: int | None = None,
-                  profile: dict | None = None) -> None:
+                  profile: dict | None = None, anchor: dict | None = None) -> None:
     """Replace a member's headline numbers with their Google Scholar profile's.
     With `since`, the profile has been cut down to papers from that year on: totals, h-index and
     citations per year are then worked out from those papers (Scholar only gives them for all papers)."""
@@ -565,7 +565,17 @@ def apply_scholar(om: dict, prof: dict, oa_works: list[dict], this_year: int, si
     cites = [p["cited_by_count"] for p in papers]
     graph = {str(g["year"]): g["citations"] for g in (prof.get("cited_by") or {}).get("graph") or []
              if g.get("year")}
-    if not graph:   # 'since' view: citations per year to these papers (OpenAlex's pattern, scaled to Scholar's counts)
+    if not graph and anchor:
+        # 'since' view: each year is the profile's real Scholar count for that year, minus the share
+        # that went to older papers (that share estimated from OpenAlex's yearly pattern per paper).
+        # So it moves with Scholar, and never exceeds the all-years number for the same year.
+        new = per_year(papers)
+        for y, n_all in anchor["graph"].items():
+            if int(y) >= (since or 0):
+                n, o = new.get(y, 0), anchor["old"].get(y, 0)
+                if n + o > 0 and round(n_all * n / (n + o)):
+                    graph[y] = round(n_all * n / (n + o))
+    if not graph:   # 'since' view with no usable Scholar graph: OpenAlex's pattern, scaled to Scholar's counts
         graph = {y: round(n) for y, n in per_year(papers).items() if round(n) and int(y) >= (since or 0)}
     total = scholar_metric(prof, "citations") or sum(cites)
     last, prev = graph.get(str(this_year - 1), 0), graph.get(str(this_year - 2), 0)
@@ -778,8 +788,21 @@ def build(cfg: dict, raw: dict, scholar: dict | None = None, since: int | None =
                     arts = [{"title": w["title"], "year": w["year"],
                              "cites": max(w["cited_by_count"], (team_gs(w["title"], w["year"]) or {}).get("cites") or 0),
                              "publication": w["venue"], "link": w.get("doi")} for w in mine]
+                anchor = None
+                if not fallback and (prof.get("cited_by") or {}).get("graph"):
+                    # the profile's older papers: their estimated citations per year (OpenAlex pattern, scaled)
+                    kept, old = {id(a) for a in arts}, Counter()
+                    for a in prof["articles"]:
+                        if id(a) in kept or not a.get("title"):
+                            continue
+                        oa = find_all(a["title"], a.get("year"))
+                        if oa and oa["cby"] and oa["cited_by_count"]:
+                            for y, n in oa["cby"].items():
+                                old[y] += n * (a.get("cites") or 0) / oa["cited_by_count"]
+                    anchor = {"old": old, "graph": {str(g["year"]): g["citations"]
+                                                    for g in prof["cited_by"]["graph"] if g.get("year")}}
                 apply_scholar(om, {"name": prof.get("name"), "fetched_at": prof.get("fetched_at"), "articles": arts},
-                              mine, this_year, since, profile)
+                              mine, this_year, since, profile, anchor)
                 if fallback:
                     om["source"] = "OpenAlex"
                     om["scholar_outdated"] = True
@@ -977,8 +1000,13 @@ def main():
     scholar = raw.get("scholar")
     if scholar is None:
         print("Google Scholar profiles...")
-        scholar = fetch_scholar(raw["members"], os.environ.get("SERPAPI_KEY"),
-                                Path(args.scholar_cache), int(st.get("scholar_refresh_days", 20)))
+        refresh = int(st.get("scholar_refresh_days", 20))
+        if os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch":
+            # 'Run workflow' pressed by hand: someone wants today's numbers, so fetch Scholar again unless
+            # it was fetched in the last `scholar_refresh_days_manual` days (about 25 SerpApi searches)
+            refresh = min(refresh, int(st.get("scholar_refresh_days_manual", 1)))
+            print(f"Run by hand: Google Scholar profiles older than {refresh} day(s) are fetched again")
+        scholar = fetch_scholar(raw["members"], os.environ.get("SERPAPI_KEY"), Path(args.scholar_cache), refresh)
     # slow OpenAlex lookups are cached between runs so monthly runs stay cheap and a failure
     # (e.g. OpenAlex rate limits) never wipes what we already know
     cache_path = Path(args.scholar_cache).parent / "openalex_cache.json"
