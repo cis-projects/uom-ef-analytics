@@ -12,10 +12,10 @@ venues:
   - {name: "International Conference on Artificial Intelligence in Education", type: conference, rank: "A", reviewed: false}  # 7 papers (5 in the last 5 years) · rank from venues.yaml
   - {name: "International Conference on Enterprise Information Systems", type: conference, reviewed: false}  # 5 papers (5 in the last 5 years) · maybe ICORE: International Conference on Cooperative Information Systems (B)
   - {name: "Pacific Journal of Technology Enhanced Learning", type: journal, reviewed: false}  # 5 papers (5 in the last 5 years)
-  - {name: "Minerva Access (University of Melbourne)", type: preprint, reviewed: false}  # 8 papers (4 in the last 5 years)
   - {name: "European Journal of Engineering Education", type: journal, reviewed: false}  # 7 papers (4 in the last 5 years)
   - {name: "arXiv (Cornell University)", type: preprint, reviewed: false}  # 6 papers (4 in the last 5 years)
   - {name: "Australian Conference on Computer-Human Interaction (OzCHI)", type: conference, rank: "Australasian", reviewed: false}  # 8 papers (3 in the last 5 years) · rank from ICORE2026 acronym OZCHI
+  - {name: "Minerva Access (University of Melbourne)", type: preprint, reviewed: false}  # 7 papers (3 in the last 5 years)
   - {name: "SEFI Annual Conference", type: conference, reviewed: false}  # 4 papers (3 in the last 5 years)
   - {name: "ACM SIGCAS/SIGCHI Conference on Computing and Sustainable Societies (COMPASS)", type: conference, rank: "C", reviewed: false}  # 3 papers (3 in the last 5 years) · rank from ICORE2026 acronym COMPASS
   - {name: "Information Systems Education Journal", type: journal, rank: "C", reviewed: false}  # 3 papers (3 in the last 5 years) · rank from CORE journals (ERA2010)
@@ -59,6 +59,7 @@ venues:
   - {name: "IEEE Transactions on Parallel and Distributed Systems", type: journal, rank: "A*", reviewed: false}  # 2 papers (1 in the last 5 years) · rank from CORE journals (CORE2020)
   - {name: "International Conference of the Portuguese Society for Engineering Education (CISPEE)", type: conference, reviewed: false}  # 2 papers (1 in the last 5 years)
   - {name: "Journal of Information Technology Education Research", type: journal, rank: "Q1", reviewed: false}  # 2 papers (1 in the last 5 years) · rank from SCImago
+  - {name: "The Conversation", type: other, reviewed: false}  # 2 papers (1 in the last 5 years)
   - {name: "The International Review of Research in Open and Distributed Learning", type: journal, rank: "Q1", reviewed: false}  # 2 papers (1 in the last 5 years) · rank from SCImago
   - {name: "ACM Conference on Innovation and Technology in Computer Science Education (ITiCSE)", type: conference, rank: "B", reviewed: false}  # 1 paper (1 in the last 5 years) · rank from ICORE2026 acronym ITiCSE
   - {name: "ACM Conference on Learning @ Scale (L@S)", type: conference, rank: "B", reviewed: false}  # 1 paper (1 in the last 5 years) · rank from ICORE2026 acronym L@S
@@ -145,7 +146,7 @@ venues:
   - {name: "The Sydney eScholarship Repository (The University of Sydney)", type: preprint, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "Visible Language", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "Australasian Software Engineering Conference (ASWEC)", type: conference, reviewed: false}  # 11 papers (0 in the last 5 years)
-  - {name: "Adaptive Agents and Multi-Agents Systems", type: conference, reviewed: false}  # 10 papers (0 in the last 5 years)
+  - {name: "Adaptive Agents and Multi-Agents Systems", type: conference, reviewed: false}  # 9 papers (0 in the last 5 years)
   - {name: "Lecture notes in computer science", type: conference, reviewed: false}  # 8 papers (0 in the last 5 years)
   - {name: "IEEE/WIC/ACM International Conference on Intelligent Agent Technology", type: conference, reviewed: false}  # 7 papers (0 in the last 5 years)
   - {name: "The Journal of Logic Programming", type: journal, reviewed: false}  # 7 papers (0 in the last 5 years)
@@ -338,11 +339,9 @@ venues:
   - {name: "Proceedings of Hyper-Oz'92: A Workshop on Hypertext Activities in Australia", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Proceedings of International Conference on Information Systems Development", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Proceedings of the APPIA-GULP-PRODE Joint Conference on Declarative", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
-  - {name: "Proceedings of the Annual Conference of the Australian Computer-Human", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Proceedings of the Annual International Conference of the IEEE", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years) · maybe ICORE: IEEE International Test Conference (A)
   - {name: "Proceedings of the Association for Information Science and Technology", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years) · OpenAlex says journal
   - {name: "Proceedings of the Australasian Computer Science Conference", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
-  - {name: "Proceedings of the Australian Conference on Computer-Human Interaction", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Proceedings of the Australian Workshop on Requirements Engineering, pages", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Proceedings of the Eighth International Workshop on Agent-Oriented Software", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Proceedings of the Eleventh Australasian Conference on Computing Education", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
@@ -355,10 +354,7 @@ venues:
   - {name: "Proceedings of the Workshop on Agent Oriented Information Systems (to appear)", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Proceedings of the Workshop on Logic Programming Tools for INTERNET", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Proceedings of the Workshop on Time Series Analytics and Applications", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
-  - {name: "Proceedings of the annual meeting of the australian special interest group", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Proceedings of the exploring educational technologies conference", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
-  - {name: "Proceedings of the first international joint conference on Autonomous agents", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
-  - {name: "Proceedings of the international conference on Artificial intelligence", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years) · maybe ICORE: International Joint Conference on Artificial Intelligence (A*)
   - {name: "Proceedings of workshop at the Second International Joint Conference on", type: conference, reviewed: false}  # 1 paper (0 in the last 5 years)
   - {name: "Research and practice in technology enhanced learning", type: journal, rank: "Q1", reviewed: false}  # 1 paper (0 in the last 5 years) · rank from SCImago
   - {name: "Research portal (Tilburg University)", type: preprint, reviewed: false}  # 1 paper (0 in the last 5 years)
