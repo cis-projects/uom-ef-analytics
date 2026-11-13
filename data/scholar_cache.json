@@ -1,13 +1,13 @@
 {
  "WxcwAEIAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Eduardo Oliveira",
   "cited_by": {
    "table": [
     {
      "citations": {
-      "all": 896,
-      "since_2021": 671
+      "all": 909,
+      "since_2021": 684
      }
     },
     {
@@ -30,7 +30,7 @@
     },
     {
      "year": 2010,
-     "citations": 6
+     "citations": 7
     },
     {
      "year": 2011,
@@ -86,7 +86,7 @@
     },
     {
      "year": 2024,
-     "citations": 88
+     "citations": 89
     },
     {
      "year": 2025,
@@ -94,7 +94,7 @@
     },
     {
      "year": 2026,
-     "citations": 258
+     "citations": 270
     }
    ]
   },
@@ -105,7 +105,7 @@
     "authors": "N Wouters, J Downs, M Harrop, T Cox, E Oliveira, S Webber, F Vetere, ...",
     "publication": "DIS'16 location:Brisbane, Australia date:4-8 June 2016, 2016",
     "year": 2016,
-    "cites": 186
+    "cites": 187
    },
    {
     "title": "The importance and meaning of session behaviour in a MOOC",
@@ -113,7 +113,7 @@
     "authors": "PG de Barba, D Malekian, EA Oliveira, J Bailey, T Ryan, G Kennedy",
     "publication": "Computers & Education 146, 103772, 2020",
     "year": 2020,
-    "cites": 124
+    "cites": 125
    },
    {
     "title": "Enabling adaptive, personalised and context-aware interaction in a smart learning environment: Piloting the iCollab system",
@@ -137,7 +137,7 @@
     "authors": "S López-Pernas, K Misiejuk, E Oliveira, M Saqr",
     "publication": "Proceedings of the 25th koli calling international conference on computing …, 2025",
     "year": 2025,
-    "cites": 29
+    "cites": 31
    },
    {
     "title": "AI, Explainable AI and Evaluative AI: Informed Data-Driven Decision-Making in Education",
@@ -201,7 +201,7 @@
     "authors": "S Rios, Y Zhang, E Oliveira",
     "publication": "ASCILITE Publications, 195-204, 2023",
     "year": 2023,
-    "cites": 15
+    "cites": 16
    },
    {
     "title": "Delving into the psychology of machines: Exploring the structure of self-regulated learning via LLM-generated survey responses",
@@ -212,20 +212,20 @@
     "cites": 14
    },
    {
+    "title": "Assuring quality learning in a gen AI-integrated future: The role of adaptive capabilities",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:LhH-TYMQEocC",
+    "authors": "JM Lodge, P de Barba, L Ainscough, JR Brazil, J Broadbent, D Ebbert, ...",
+    "publication": "Tertiary Education Quality and Standards Agency, 2026",
+    "year": 2026,
+    "cites": 13
+   },
+   {
     "title": "Device nimbus: an intelligent middleware for smarter services for health and fitness",
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:V3AGJWp-ZtQC",
     "authors": "EA Oliveira, M Kirley, JCB Fonseca, K Gama",
     "publication": "International Journal of Distributed Sensor Networks 11 (8), 454626, 2015",
     "year": 2015,
     "cites": 13
-   },
-   {
-    "title": "Assuring quality learning in a gen AI-integrated future: The role of adaptive capabilities",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:LhH-TYMQEocC",
-    "authors": "JM Lodge, P de Barba, L Ainscough, JR Brazil, J Broadbent, D Ebbert, ...",
-    "publication": "Tertiary Education Quality and Standards Agency, 2026",
-    "year": 2026,
-    "cites": 12
    },
    {
     "title": "An Introduction to Large Language Models in Education",
@@ -271,7 +271,7 @@
     "title": "ForUX: um modelo de fórum de discussão para representações fidedignas de idéias",
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:d1gkVwhDpl0C",
     "authors": "EA Oliveira, A Azevedo, J Fonseca, M Godoy, C Alves, AS Gomes",
-    "publication": "Anais do XX Simpósio Brasileiro de Informática na Educação (SBIE …, 2009",
+    "publication": "Brazilian Symposium on Computers in Education (Simpósio Brasileiro de …, 2009",
     "year": 2009,
     "cites": 10
    },
@@ -298,6 +298,14 @@
     "publication": "Proceedings of the 14th Learning Analytics and Knowledge Conference, 936-942, 2024",
     "year": 2024,
     "cites": 9
+   },
+   {
+    "title": "Unpacking Vibe Coding: Help-Seeking Processes in Student-AI Interactions While Programming",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:Ehil0879vHcC",
+    "authors": "D Rinja, EA Oliveira, S López-Pernas, M Saqr, M Specht, K Misiejuk",
+    "publication": "International Conference on Artificial Intelligence in Education, 515-530, 2026",
+    "year": 2026,
+    "cites": 8
    },
    {
     "title": "The impact of cognitive load on students’ academic writing: an authorship verification investigation",
@@ -332,10 +340,10 @@
     "cites": 7
    },
    {
-    "title": "Unpacking Vibe Coding: Help-Seeking Processes in Student-AI Interactions While Programming",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:Ehil0879vHcC",
-    "authors": "D Rinja, EA Oliveira, S López-Pernas, M Saqr, M Specht, K Misiejuk",
-    "publication": "International Conference on Artificial Intelligence in Education, 515-530, 2026",
+    "title": "Hybrid intelligence in requirements education: Preserving student agency in refining user stories with generative AI",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:HtS1dXgVpQUC",
+    "authors": "L Sterling, E Oliveira",
+    "publication": "Information 17 (2), 166, 2026",
     "year": 2026,
     "cites": 6
    },
@@ -362,14 +370,6 @@
     "publication": "2009 International Conference of Soft Computing and Pattern Recognition, 687-690, 2009",
     "year": 2009,
     "cites": 6
-   },
-   {
-    "title": "Hybrid intelligence in requirements education: Preserving student agency in refining user stories with generative AI",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:HtS1dXgVpQUC",
-    "authors": "L Sterling, E Oliveira",
-    "publication": "Information 17 (2), 166, 2026",
-    "year": 2026,
-    "cites": 5
    },
    {
     "title": "The AI Ally Project: Designing a human-centred AI tool for women's safety in online spaces",
@@ -508,6 +508,22 @@
     "cites": 3
    },
    {
+    "title": "Profiling Writing Skills at Scale: A Hybrid Stylometry-LLM Pipeline for Formative Feedback",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:r_AWSJRzSzQC",
+    "authors": "S Pande, Y Song, K Misiejuk, S López-Pernas, M Saqr, EA Oliveira",
+    "publication": "Proceedings of the Thirteenth ACM Conference on Learning@ Scale, 491-495, 2026",
+    "year": 2026,
+    "cites": 2
+   },
+   {
+    "title": "From Writing Traces to Personalised Support: Guiding LLMs with Stylometric Fingerprints",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:yqoGN6RLRZoC",
+    "authors": "D Wu, K Misiejuk, S López-Pernas, G Chen, M Saqr, E Oliveira",
+    "publication": "International Conference on Artificial Intelligence in Education, 469-478, 2026",
+    "year": 2026,
+    "cites": 2
+   },
+   {
     "title": "Combinaçao de Modelos de Aprendizado de Máquina utilizando Teoria de Resposta ao Item para Avaliaçao de Coesao Textual em Redaçoes no contexto do ENEM",
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:sNmaIFBj_lkC",
     "authors": "BA Rosa, H Oliveira, RF Mello, EA Oliveira",
@@ -564,10 +580,10 @@
     "cites": 1
    },
    {
-    "title": "Profiling Writing Skills at Scale: A Hybrid Stylometry-LLM Pipeline for Formative Feedback",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:r_AWSJRzSzQC",
-    "authors": "S Pande, Y Song, K Misiejuk, S López-Pernas, M Saqr, EA Oliveira",
-    "publication": "Proceedings of the Thirteenth ACM Conference on Learning@ Scale, 491-495, 2026",
+    "title": "Can AI deliver appropriate support for diverse student profiles?: A large-scale evaluation",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:nZcligLrVowC",
+    "authors": "S López-Pernas, E Oliveira, K Misiejuk, F Deriba, R Kaliisa, M Saqr",
+    "publication": "Computers in Human Behavior: Artificial Humans, 100357, 2026",
     "year": 2026,
     "cites": 1
    },
@@ -580,10 +596,10 @@
     "cites": 1
    },
    {
-    "title": "From Writing Traces to Personalised Support: Guiding LLMs with Stylometric Fingerprints",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:yqoGN6RLRZoC",
-    "authors": "D Wu, K Misiejuk, S López-Pernas, G Chen, M Saqr, E Oliveira",
-    "publication": "International Conference on Artificial Intelligence in Education, 469-478, 2026",
+    "title": "AI-Assisted Code Review as a Scaffold for Code Quality and Self-Regulated Learning: An Experience Report",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:KbBQZpvPDL4C",
+    "authors": "E Oliveira, M Fu, P Thongtanunam, S López-Pernas, M Saqr",
+    "publication": "Proceedings of the IEEE/ACM 48th International Conference on Software …, 2026",
     "year": 2026,
     "cites": 1
    },
@@ -604,6 +620,22 @@
     "cites": 1
    },
    {
+    "title": "It Takes Two to Vibe Code: Profiling Student-AI Programming Interactions Processes and Their High Order Structure",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:lvd772isFD0C",
+    "authors": "K Misiejuk, S López-Pernas, E Oliveira, D Rinja, M Saqr",
+    "publication": "Proceedings of the 26th Koli Calling International Conference on Computing …, 2026",
+    "year": 2026,
+    "cites": 0
+   },
+   {
+    "title": "A GitHub Proxy Framework for Promoting SRL and Student Agency in Software Engineering Capstones",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:5MTHONV0fEkC",
+    "authors": "J Lu, K Misiejuk, S López-Pernas, M Saqr, A Vassar, J Renzella, ...",
+    "publication": "Proceedings of the 26th Koli Calling International Conference on Computing …, 2026",
+    "year": 2026,
+    "cites": 0
+   },
+   {
     "title": "Blockchain-Based Data Sharing for National Statistics Offices: A Survey and Privacy Governance Evaluated with the Five Safes Framework",
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:u-coK7KVo8oC",
     "authors": "I Sandyawan, F Sigmanova, ZZ Li, EA Oliveira, H Cui",
@@ -616,14 +648,6 @@
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:Aul-kAQHnToC",
     "authors": "S López-Pernas, K Misiejuk, E Oliveira, M Saqr",
     "publication": "Open Educational Practices in the Artificial Intelligence Era, 225, 2026",
-    "year": 2026,
-    "cites": 0
-   },
-   {
-    "title": "Can AI deliver appropriate support for diverse student profiles?: A large-scale evaluation",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:nZcligLrVowC",
-    "authors": "S López-Pernas, E Oliveira, K Misiejuk, F Deriba, R Kaliisa, M Saqr",
-    "publication": "Computers in Human Behavior: Artificial Humans, 100357, 2026",
     "year": 2026,
     "cites": 0
    },
@@ -656,14 +680,6 @@
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:GFxP56DSvIMC",
     "authors": "K Misiejuk, EA Oliveira, S López-Pernas, M Saqr",
     "publication": "Available at SSRN 6974338, 2026",
-    "year": 2026,
-    "cites": 0
-   },
-   {
-    "title": "AI-Assisted Code Review as a Scaffold for Code Quality and Self-Regulated Learning: An Experience Report",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=WxcwAEIAAAAJ&pagesize=100&citation_for_view=WxcwAEIAAAAJ:KbBQZpvPDL4C",
-    "authors": "E Oliveira, M Fu, P Thongtanunam, S López-Pernas, M Saqr",
-    "publication": "Proceedings of the IEEE/ACM 48th International Conference on Software …, 2026",
     "year": 2026,
     "cites": 0
    },
@@ -798,14 +814,14 @@
   ]
  },
  "oo8jF60AAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Andrew Valentine",
   "cited_by": {
    "table": [
     {
      "citations": {
-      "all": 593,
-      "since_2021": 514
+      "all": 590,
+      "since_2021": 511
      }
     },
     {
@@ -848,7 +864,7 @@
     },
     {
      "year": 2022,
-     "citations": 61
+     "citations": 60
     },
     {
      "year": 2023,
@@ -860,11 +876,11 @@
     },
     {
      "year": 2025,
-     "citations": 113
+     "citations": 114
     },
     {
      "year": 2026,
-     "citations": 92
+     "citations": 89
     }
    ]
   },
@@ -939,7 +955,7 @@
     "authors": "R Garcia, C Treude, A Valentine",
     "publication": "Proceedings of the 55th ACM Technical Symposium on Computer Science …, 2024",
     "year": 2024,
-    "cites": 18
+    "cites": 17
    },
    {
     "title": "Technologies for Fever Screening in the Time of COVID-19: A Review",
@@ -1030,14 +1046,6 @@
     "cites": 5
    },
    {
-    "title": "A comparative scientometric analysis of Diversity, Equity, and Inclusion (DEI) publications in European Journal of Engineering Education and Journal of Engineering Education",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=oo8jF60AAAAJ&pagesize=100&citation_for_view=oo8jF60AAAAJ:isC4tDSrTZIC",
-    "authors": "B Williams, A Valentine, N Wint",
-    "publication": "2024 SEFI Annual Conference, 1-8, 2024",
-    "year": 2024,
-    "cites": 5
-   },
-   {
     "title": "Influence of using a pen-and-paper or computer-based approach on engineering students’ self-efficacy during idea generation",
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=oo8jF60AAAAJ&pagesize=100&citation_for_view=oo8jF60AAAAJ:qUcmZB5y_30C",
     "authors": "A Valentine, I Belski, M Hamilton",
@@ -1082,6 +1090,14 @@
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=oo8jF60AAAAJ&pagesize=100&citation_for_view=oo8jF60AAAAJ:k_IJM867U9cC",
     "authors": "Z Chen, Y Song, A Valentine, P de Barba, S Rios, E Oliveira",
     "publication": "ASCILITE Publications, 223-233, 2024",
+    "year": 2024,
+    "cites": 3
+   },
+   {
+    "title": "A comparative scientometric analysis of Diversity, Equity, and Inclusion (DEI) publications in European Journal of Engineering Education and Journal of Engineering Education",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=oo8jF60AAAAJ&pagesize=100&citation_for_view=oo8jF60AAAAJ:isC4tDSrTZIC",
+    "authors": "B Williams, A Valentine, N Wint",
+    "publication": "2024 SEFI Annual Conference, 1-8, 2024",
     "year": 2024,
     "cites": 3
    },
@@ -1368,14 +1384,14 @@
   ]
  },
  "zo2pj7cAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Winn Chow",
   "cited_by": {
    "table": [
     {
      "citations": {
-      "all": 89,
-      "since_2021": 84
+      "all": 91,
+      "since_2021": 86
      }
     },
     {
@@ -1422,11 +1438,11 @@
     },
     {
      "year": 2024,
-     "citations": 15
+     "citations": 16
     },
     {
      "year": 2025,
-     "citations": 28
+     "citations": 29
     },
     {
      "year": 2026,
@@ -1441,7 +1457,7 @@
     "authors": "W Chow",
     "publication": "2019 IEEE International Conference on Teaching, Assessment, and Learning for …, 2019",
     "year": 2019,
-    "cites": 28
+    "cites": 29
    },
    {
     "title": "Teaching business process management with a flipped-classroom and problem-based learning approach with the use of apromore and other bpm software in graduate information …",
@@ -1468,19 +1484,19 @@
     "cites": 8
    },
    {
-    "title": "Personalized, Accessible, but Imperfect: Why Students Turn to GenAI for Academic Help",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=zo2pj7cAAAAJ&pagesize=100&citation_for_view=zo2pj7cAAAAJ:WF5omc3nYNoC",
-    "authors": "M Guo, W Chow, H Samadi, A Atiq, T Linden",
-    "publication": "Proceedings of the ISCAP Conference ISSN 2473, 4901, 2025",
-    "year": 2025,
-    "cites": 5
-   },
-   {
     "title": "Generative AI: A high-performing assistant in examination design",
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=zo2pj7cAAAAJ&pagesize=100&citation_for_view=zo2pj7cAAAAJ:zYLM7Y9cAGgC",
     "authors": "WWY Chow",
     "publication": "ASCILITE, 330-335, 2024",
     "year": 2024,
+    "cites": 6
+   },
+   {
+    "title": "Personalized, Accessible, but Imperfect: Why Students Turn to GenAI for Academic Help",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=zo2pj7cAAAAJ&pagesize=100&citation_for_view=zo2pj7cAAAAJ:WF5omc3nYNoC",
+    "authors": "M Guo, W Chow, H Samadi, A Atiq, T Linden",
+    "publication": "Proceedings of the ISCAP Conference ISSN 2473, 4901, 2025",
+    "year": 2025,
     "cites": 5
    },
    {
@@ -1694,7 +1710,7 @@
   ]
  },
  "p53m_jIAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Geela Venise Fabic Chee",
   "cited_by": {
    "table": [
@@ -1896,14 +1912,14 @@
   ]
  },
  "Mi79FfQAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "A/Prof Antonette Mendoza",
   "cited_by": {
    "table": [
     {
      "citations": {
-      "all": 1891,
-      "since_2021": 1446
+      "all": 1900,
+      "since_2021": 1456
      }
     },
     {
@@ -1978,7 +1994,7 @@
     },
     {
      "year": 2024,
-     "citations": 268
+     "citations": 269
     },
     {
      "year": 2025,
@@ -1986,7 +2002,7 @@
     },
     {
      "year": 2026,
-     "citations": 217
+     "citations": 225
     }
    ]
   },
@@ -1997,7 +2013,7 @@
     "authors": "F Cataldo, S Chang, A Mendoza, G Buchanan",
     "publication": "JMIR mental health 8 (2), e19004, 2021",
     "year": 2021,
-    "cites": 169
+    "cites": 172
    },
    {
     "title": "Telework, productivity and wellbeing: an Australian perspective",
@@ -2053,7 +2069,7 @@
     "authors": "A Mendoza, A Venables",
     "publication": "Journal of Information Technology Education. Research 22, 129, 2023",
     "year": 2023,
-    "cites": 65
+    "cites": 66
    },
    {
     "title": "Development of a mobile clinical prediction tool to estimate future depression severity and guide treatment in primary care: user-centered design",
@@ -2069,7 +2085,7 @@
     "authors": "AA Lopez-Lorca, T Miller, S Pedell, A Mendoza, A Keirnan, L Sterling",
     "publication": "Proceedings of the 6th International Workshop on Social Software Engineering …, 2014",
     "year": 2014,
-    "cites": 48
+    "cites": 49
    },
    {
     "title": "Telework, productivity and wellbeing",
@@ -2141,7 +2157,7 @@
     "authors": "F Cataldo, S Chang, A Mendoza, G Buchanan",
     "publication": null,
     "year": 2021,
-    "cites": 24
+    "cites": 25
    },
    {
     "title": "“I need to compartmentalize myself”: Appropriation of Instagram for chronic illness management",
@@ -2208,20 +2224,20 @@
     "cites": 17
    },
    {
+    "title": "BYOD usage and security behaviour of hospital clinical staff: an Australian survey",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mi79FfQAAAAJ&pagesize=100&citation_for_view=Mi79FfQAAAAJ:a0OBvERweLwC",
+    "authors": "TA Wani, A Mendoza, K Gray, F Smolenaers",
+    "publication": "International Journal of Medical Informatics 165, 104839, 2022",
+    "year": 2022,
+    "cites": 16
+   },
+   {
     "title": "Evaluating ask izzy: A mobile web app for people experiencing homelessness",
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mi79FfQAAAAJ&pagesize=100&citation_for_view=Mi79FfQAAAAJ:M3NEmzRMIkIC",
     "authors": "R Burrows, A Mendoza, L Sterling, T Miller, S Pedell",
     "publication": "Proceedings of 17th European conference on computer-supported cooperative work, 2019",
     "year": 2019,
     "cites": 15
-   },
-   {
-    "title": "BYOD usage and security behaviour of hospital clinical staff: an Australian survey",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mi79FfQAAAAJ&pagesize=100&citation_for_view=Mi79FfQAAAAJ:a0OBvERweLwC",
-    "authors": "TA Wani, A Mendoza, K Gray, F Smolenaers",
-    "publication": "International Journal of Medical Informatics 165, 104839, 2022",
-    "year": 2022,
-    "cites": 14
    },
    {
     "title": "Videoconference in Psychotherapy: Understanding research and practical implications",
@@ -2261,6 +2277,14 @@
     "authors": "TA Wani, A Mendoza, K Gray",
     "publication": "JMIR Human Factors 12, e71912, 2025",
     "year": 2025,
+    "cites": 12
+   },
+   {
+    "title": "Technology for societal change: evaluating a mobile app addressing the emotional needs of people experiencing homelessness",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mi79FfQAAAAJ&pagesize=100&citation_for_view=Mi79FfQAAAAJ:pyW8ca7W8N0C",
+    "authors": "R Burrows, A Mendoza, S Pedell, L Sterling, T Miller, A Lopez-Lorca",
+    "publication": "Health Informatics Journal 28 (4), 14604582221146720, 2022",
+    "year": 2022,
     "cites": 12
    },
    {
@@ -2309,14 +2333,6 @@
     "authors": "P Pit, T Linden, A Mendoza",
     "publication": null,
     "year": 2024,
-    "cites": 11
-   },
-   {
-    "title": "Technology for societal change: evaluating a mobile app addressing the emotional needs of people experiencing homelessness",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Mi79FfQAAAAJ&pagesize=100&citation_for_view=Mi79FfQAAAAJ:pyW8ca7W8N0C",
-    "authors": "R Burrows, A Mendoza, S Pedell, L Sterling, T Miller, A Lopez-Lorca",
-    "publication": "Health Informatics Journal 28 (4), 14604582221146720, 2022",
-    "year": 2022,
     "cites": 11
    },
    {
@@ -2874,7 +2890,7 @@
   ]
  },
  "s4NGl1EAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Stella Peng",
   "cited_by": {
    "table": [
@@ -3072,14 +3088,14 @@
   ]
  },
  "rgJhCE4AAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Vi Truong",
   "cited_by": {
    "table": [
     {
      "citations": {
-      "all": 345,
-      "since_2021": 330
+      "all": 346,
+      "since_2021": 331
      }
     },
     {
@@ -3134,7 +3150,7 @@
     },
     {
      "year": 2026,
-     "citations": 46
+     "citations": 47
     }
    ]
   },
@@ -3153,7 +3169,7 @@
     "authors": "CM Stracke, RC Sharma, A Bozkurt, D Burgos, CS Cassafieres, ...",
     "publication": "The International Review of Research in Open and Distributed Learning 4 (23 …, 2022",
     "year": 2022,
-    "cites": 99
+    "cites": 100
    },
    {
     "title": "A translator for American sign language to text and speech",
@@ -3318,14 +3334,14 @@
   ]
  },
  "S4VbbVEAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Tanya Linden",
   "cited_by": {
    "table": [
     {
      "citations": {
-      "all": 596,
-      "since_2021": 455
+      "all": 600,
+      "since_2021": 459
      }
     },
     {
@@ -3336,7 +3352,7 @@
     },
     {
      "i10_index": {
-      "all": 17,
+      "all": 18,
       "since_2021": 12
      }
     }
@@ -3452,7 +3468,7 @@
     },
     {
      "year": 2026,
-     "citations": 123
+     "citations": 127
     }
    ]
   },
@@ -3479,7 +3495,7 @@
     "authors": "S Kurnia, T Linden, G Huang",
     "publication": "Enterprise Information Systems 13 (9), 1195-1216, 2019",
     "year": 2019,
-    "cites": 44
+    "cites": 45
    },
    {
     "title": "Adults’ perspectives on smartphone usage and dependency in Australia",
@@ -3599,7 +3615,7 @@
     "authors": "T Linden, R Lederman",
     "publication": "Information Systems Educators Conference (ISECon 2011), 2011",
     "year": 2011,
-    "cites": 9
+    "cites": 10
    },
    {
     "title": "Exploring smartphone usage patterns and perceived dependency: A cross-sectional study in Australia",
@@ -3658,6 +3674,14 @@
     "cites": 6
    },
    {
+    "title": "Understanding smartphone usage behaviours: developing and validating the brief problematic smartphone use and dependence scale",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=S4VbbVEAAAAJ&pagesize=100&citation_for_view=S4VbbVEAAAAJ:isC4tDSrTZIC",
+    "authors": "S Nawaz, J Bhowmik, T Linden, M Mitchell",
+    "publication": "Behaviour & Information Technology 45 (3), 478-497, 2026",
+    "year": 2026,
+    "cites": 5
+   },
+   {
     "title": "Personalized, Accessible, but Imperfect: Why Students Turn to GenAI for Academic Help",
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=S4VbbVEAAAAJ&pagesize=100&citation_for_view=S4VbbVEAAAAJ:maZDTaKrznsC",
     "authors": "M Guo, W Chow, H Samadi, A Atiq, T Linden",
@@ -3682,14 +3706,6 @@
     "cites": 5
    },
    {
-    "title": "Understanding smartphone usage behaviours: developing and validating the brief problematic smartphone use and dependence scale",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=S4VbbVEAAAAJ&pagesize=100&citation_for_view=S4VbbVEAAAAJ:isC4tDSrTZIC",
-    "authors": "S Nawaz, J Bhowmik, T Linden, M Mitchell",
-    "publication": "Behaviour & Information Technology 45 (3), 478-497, 2026",
-    "year": 2026,
-    "cites": 4
-   },
-   {
     "title": "Planning the Process of Multimedia Development.",
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=S4VbbVEAAAAJ&pagesize=100&citation_for_view=S4VbbVEAAAAJ:IjCSPb-OGe4C",
     "authors": "T Linden, JL Cybulski",
@@ -3702,6 +3718,14 @@
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=S4VbbVEAAAAJ&pagesize=100&citation_for_view=S4VbbVEAAAAJ:NMxIlDl6LWMC",
     "authors": "S Nawaz, T Linden, M Mitchell, J Bhowmik",
     "publication": "Social Sciences & Humanities Open 13, 102569, 2026",
+    "year": 2026,
+    "cites": 3
+   },
+   {
+    "title": "Special issue editorial: Initial studies on the applications of generative AI in education",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=S4VbbVEAAAAJ&pagesize=100&citation_for_view=S4VbbVEAAAAJ:blknAaTinKkC",
+    "authors": "M Grandbastien, A Horbach, T Jansen, T Linden",
+    "publication": "Education and Information Technologies 31 (6), 1787-1791, 2026",
     "year": 2026,
     "cites": 3
    },
@@ -3742,14 +3766,6 @@
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=S4VbbVEAAAAJ&pagesize=100&citation_for_view=S4VbbVEAAAAJ:BqipwSGYUEgC",
     "authors": "A Mendoza, A Venables, T Linden",
     "publication": "International Journal of Learning, Teaching and Educational Research 25 (4 …, 2026",
-    "year": 2026,
-    "cites": 2
-   },
-   {
-    "title": "Special issue editorial: Initial studies on the applications of generative AI in education",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=S4VbbVEAAAAJ&pagesize=100&citation_for_view=S4VbbVEAAAAJ:blknAaTinKkC",
-    "authors": "M Grandbastien, A Horbach, T Jansen, T Linden",
-    "publication": "Education and Information Technologies 31 (6), 1787-1791, 2026",
     "year": 2026,
     "cites": 2
    },
@@ -4004,14 +4020,14 @@
   ]
  },
  "na0g1r8AAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Rod Dilnutt",
   "cited_by": {
    "table": [
     {
      "citations": {
-      "all": 578,
-      "since_2021": 438
+      "all": 582,
+      "since_2021": 442
      }
     },
     {
@@ -4118,7 +4134,7 @@
     },
     {
      "year": 2026,
-     "citations": 90
+     "citations": 92
     }
    ]
   },
@@ -4137,7 +4153,7 @@
     "authors": "S Kotusev, S Kurnia, R Dilnutt",
     "publication": "Information and Software Technology, 2023",
     "year": 2023,
-    "cites": 51
+    "cites": 53
    },
    {
     "title": "Artifacts, activities, benefits and blockers: Exploring enterprise architecture practice in depth",
@@ -4177,7 +4193,7 @@
     "authors": "S Kotusev, K S., R Dilnutt, G Shanks",
     "publication": "Communications of the Association for Information Systems, 2021",
     "year": 2021,
-    "cites": 36
+    "cites": 37
    },
    {
     "title": "Enterprise content management: Supporting knowledge management capability",
@@ -4209,7 +4225,7 @@
     "authors": "S Kotusev, S Kurnia, R Dilnutt, R van de Wetering",
     "publication": "Business & Information Systems Engineering, 2023",
     "year": 2023,
-    "cites": 17
+    "cites": 18
    },
    {
     "title": "The Role of Engagement in Achieving Business-IT Alignment Through Practicing Enterprise Architecture",
@@ -4982,14 +4998,14 @@
   ]
  },
  "nzQ2zqgAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Zoey Ziyi LI",
   "cited_by": {
    "table": [
     {
      "citations": {
-      "all": 95,
-      "since_2021": 95
+      "all": 96,
+      "since_2021": 96
      }
     },
     {
@@ -5024,7 +5040,7 @@
     },
     {
      "year": 2026,
-     "citations": 30
+     "citations": 31
     }
    ]
   },
@@ -5078,20 +5094,20 @@
     "cites": 5
    },
    {
+    "title": "Disims: A distributed identity management system via blockchain",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=nzQ2zqgAAAAJ&pagesize=100&citation_for_view=nzQ2zqgAAAAJ:W7OEmFMy1HYC",
+    "authors": "ZZ Li, H Cui, ACY Leung, DYW Liu, JK Liu, J Yu, D Gasevic",
+    "publication": "IEEE Transactions on Dependable and Secure Computing, 2026",
+    "year": 2026,
+    "cites": 3
+   },
+   {
     "title": "Bdec: Enhancing learning credibility via post-quantum digital credentials",
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=nzQ2zqgAAAAJ&pagesize=100&citation_for_view=nzQ2zqgAAAAJ:IjCSPb-OGe4C",
     "authors": "ZZ Li, X Zhang, H Cui, J Zhao, X Chen",
     "publication": "International Conference on Provable Security, 45-64, 2024",
     "year": 2024,
     "cites": 3
-   },
-   {
-    "title": "Disims: A distributed identity management system via blockchain",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=nzQ2zqgAAAAJ&pagesize=100&citation_for_view=nzQ2zqgAAAAJ:W7OEmFMy1HYC",
-    "authors": "ZZ Li, H Cui, ACY Leung, DYW Liu, JK Liu, J Yu, D Gasevic",
-    "publication": "IEEE Transactions on Dependable and Secure Computing, 2026",
-    "year": 2026,
-    "cites": 2
    },
    {
     "title": "A Consortium Blockchain Architecture for Cross-Organisational Security Log Integrity Verification",
@@ -5144,7 +5160,7 @@
   ]
  },
  "MeTI9NYAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Arzoo Atiq",
   "cited_by": {
    "table": [
@@ -5324,6 +5340,14 @@
     "cites": 1
    },
    {
+    "title": "Holographic Technologies in Education: A Literature Review of Technologies, Pedagogical Applications, Challenges, and Future Directions",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=MeTI9NYAAAAJ&pagesize=100&citation_for_view=MeTI9NYAAAAJ:_kc_bZDykSQC",
+    "authors": "M Nadeem, JMH Barakat, A Atiq, MH Saleem",
+    "publication": "Multimodal Technologies and Interaction 10 (11), 118, 2026",
+    "year": 2026,
+    "cites": 0
+   },
+   {
     "title": "Revisiting Academic Source Selection: Habit, Dependency, and Cognitive Effort in the Age of GenAI.",
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=MeTI9NYAAAAJ&pagesize=100&citation_for_view=MeTI9NYAAAAJ:kNdYIx-mwKoC",
     "authors": "M Guo, W Chow, H Samadi, A Atiq, T Linden",
@@ -5470,7 +5494,7 @@
   ]
  },
  "eRC3nwMAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Andrew Chester",
   "cited_by": {
    "table": [
@@ -5568,7 +5592,7 @@
   ]
  },
  "Vopds8IAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Hasti Samadi",
   "cited_by": {
    "table": [
@@ -5646,14 +5670,14 @@
   ]
  },
  "bGj7c6UAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Jean Lee",
   "cited_by": {
    "table": [
     {
      "citations": {
-      "all": 602,
-      "since_2021": 601
+      "all": 606,
+      "since_2021": 605
      }
     },
     {
@@ -5680,7 +5704,7 @@
     },
     {
      "year": 2024,
-     "citations": 74
+     "citations": 75
     },
     {
      "year": 2025,
@@ -5688,7 +5712,7 @@
     },
     {
      "year": 2026,
-     "citations": 241
+     "citations": 244
     }
    ]
   },
@@ -5699,7 +5723,7 @@
     "authors": "J Lee, N Stevens, SC Han, M Song",
     "publication": "Neural Computing & Applications (NCAA), 2024",
     "year": 2024,
-    "cites": 342
+    "cites": 347
    },
    {
     "title": "Deep learning based visually rich document content understanding: A survey",
@@ -5723,7 +5747,7 @@
     "authors": "H Weld, G Huang, J Lee, T Zhang, K Wang, X Guo, S Long, J Poon, ...",
     "publication": "ACL-IJCNLP Findings, 2021",
     "year": 2021,
-    "cites": 53
+    "cites": 52
    },
    {
     "title": "StockEmotions: Discover Investor Emotions for Financial Sentiment Analysis and Multivariate Time Series",
@@ -5776,14 +5800,14 @@
   ]
  },
  "N056eT4AAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Leon Sterling",
   "cited_by": {
    "table": [
     {
      "citations": {
-      "all": 9822,
-      "since_2021": 1218
+      "all": 9830,
+      "since_2021": 1220
      }
     },
     {
@@ -5890,7 +5914,7 @@
     },
     {
      "year": 2009,
-     "citations": 316
+     "citations": 317
     },
     {
      "year": 2010,
@@ -5898,7 +5922,7 @@
     },
     {
      "year": 2011,
-     "citations": 266
+     "citations": 270
     },
     {
      "year": 2012,
@@ -5926,7 +5950,7 @@
     },
     {
      "year": 2018,
-     "citations": 309
+     "citations": 310
     },
     {
      "year": 2019,
@@ -5954,11 +5978,11 @@
     },
     {
      "year": 2025,
-     "citations": 148
+     "citations": 149
     },
     {
      "year": 2026,
-     "citations": 147
+     "citations": 148
     }
    ]
   },
@@ -5969,7 +5993,7 @@
     "authors": "L Sterling, EY Shapiro",
     "publication": "MIT press, 1994",
     "year": 1994,
-    "cites": 3752
+    "cites": 3754
    },
    {
     "title": "The art of Prolog: advanced programming techniques",
@@ -5977,7 +6001,7 @@
     "authors": "L Sterling, EY Shapiro",
     "publication": "MIT press, 1994",
     "year": 1994,
-    "cites": 3722
+    "cites": 3724
    },
    {
     "title": "The art of agent-oriented modeling",
@@ -5985,7 +6009,7 @@
     "authors": "L Sterling, K Taveter",
     "publication": "MIT Press, 2009",
     "year": 2009,
-    "cites": 444
+    "cites": 445
    },
    {
     "title": "ROADMAP: extending the gaia methodology for complex open systems",
@@ -5993,7 +6017,7 @@
     "authors": "T Juan, A Pearce, L Sterling",
     "publication": "Proceedings of the first international joint conference on Autonomous agents …, 2002",
     "year": 2002,
-    "cites": 384
+    "cites": 385
    },
    {
     "title": "A biological perspective on autonomous agent design",
@@ -6249,7 +6273,7 @@
     "authors": "AA Lopez-Lorca, T Miller, S Pedell, A Mendoza, A Keirnan, L Sterling",
     "publication": "Proceedings of the 6th International Workshop on Social Software Engineering …, 2014",
     "year": 2014,
-    "cites": 48
+    "cites": 49
    },
    {
     "title": "Integer matrices and abelian groups",
@@ -6772,6 +6796,14 @@
     "cites": 18
    },
    {
+    "title": "The software engineering of agent-based intelligent adaptive systems",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=N056eT4AAAAJ&cstart=100&pagesize=100&citation_for_view=N056eT4AAAAJ:ILKRHgRFtOwC",
+    "authors": "L Sterling, T Juan",
+    "publication": "Software Engineering, 2005. ICSE 2005. Proceedings. 27th International …, 2005",
+    "year": 2005,
+    "cites": 18
+   },
+   {
     "title": "Skeletons and techniques as a normative approach to program development in logic-based languages",
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=N056eT4AAAAJ&cstart=100&pagesize=100&citation_for_view=N056eT4AAAAJ:rmuvC79q63oC",
     "authors": "M Kirschenbaum, S Michaylov, L Sterling",
@@ -6800,14 +6832,6 @@
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=N056eT4AAAAJ&cstart=100&pagesize=100&citation_for_view=N056eT4AAAAJ:hCrLmN-GePgC",
     "authors": "N Ronald, L Sterling",
     "publication": "Intelligent Agent Technology, IEEE/WIC/ACM International Conference on, 161-164, 2005",
-    "year": 2005,
-    "cites": 17
-   },
-   {
-    "title": "The software engineering of agent-based intelligent adaptive systems",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=N056eT4AAAAJ&cstart=100&pagesize=100&citation_for_view=N056eT4AAAAJ:ILKRHgRFtOwC",
-    "authors": "L Sterling, T Juan",
-    "publication": "Software Engineering, 2005. ICSE 2005. Proceedings. 27th International …, 2005",
     "year": 2005,
     "cites": 17
    },
@@ -6892,6 +6916,14 @@
     "cites": 15
    },
    {
+    "title": "Specifying roles within agent-oriented software engineering",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=N056eT4AAAAJ&cstart=100&pagesize=100&citation_for_view=N056eT4AAAAJ:u-x6o8ySG0sC",
+    "authors": "K Chan, L Sterling",
+    "publication": "Software Engineering Conference, 2003. Tenth Asia-Pacific, 390-395, 2003",
+    "year": 2003,
+    "cites": 14
+   },
+   {
     "title": "A methodology for building information agents",
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=N056eT4AAAAJ&cstart=100&pagesize=100&citation_for_view=N056eT4AAAAJ:GtLg2Ama23sC",
     "authors": "X Gao, L Sterling",
@@ -6937,14 +6969,6 @@
     "authors": "S Pedell, T Miller, F Vetere, L Sterling, S Howard, J Paay",
     "publication": "Proceedings of the 21st Annual Conference of the Australian Computer-Human …, 2009",
     "year": 2009,
-    "cites": 13
-   },
-   {
-    "title": "Specifying roles within agent-oriented software engineering",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=N056eT4AAAAJ&cstart=100&pagesize=100&citation_for_view=N056eT4AAAAJ:u-x6o8ySG0sC",
-    "authors": "K Chan, L Sterling",
-    "publication": "Software Engineering Conference, 2003. Tenth Asia-Pacific, 390-395, 2003",
-    "year": 2003,
     "cites": 13
    },
    {
@@ -7036,20 +7060,20 @@
     "cites": 11
    },
    {
+    "title": "Agent-oriented software analysis",
+    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=N056eT4AAAAJ&cstart=100&pagesize=100&citation_for_view=N056eT4AAAAJ:xtRiw3GOFMkC",
+    "authors": "K Chan, L Sterling, S Karunasekera",
+    "publication": "Software Engineering Conference, 2004. Proceedings. 2004 Australian, 20-27, 2004",
+    "year": 2004,
+    "cites": 11
+   },
+   {
     "title": "A methodology for program construction by stepwise structural enhancement",
     "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=N056eT4AAAAJ&cstart=100&pagesize=100&citation_for_view=N056eT4AAAAJ:t6usbXjVLHcC",
     "authors": "A Jain, L Sterling",
     "publication": null,
     "year": 1994,
     "cites": 11
-   },
-   {
-    "title": "Agent-oriented software analysis",
-    "link": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=N056eT4AAAAJ&cstart=100&pagesize=100&citation_for_view=N056eT4AAAAJ:xtRiw3GOFMkC",
-    "authors": "K Chan, L Sterling, S Karunasekera",
-    "publication": "Software Engineering Conference, 2004. Proceedings. 2004 Australian, 20-27, 2004",
-    "year": 2004,
-    "cites": 10
    },
    {
     "title": "Agents in a multi-cultural world: Towards ontological reconciliation",
@@ -8614,14 +8638,14 @@
   ]
  },
  "mzlZXAMAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Madeleine Antonellos",
   "cited_by": {
    "table": [
     {
      "citations": {
-      "all": 27,
-      "since_2021": 24
+      "all": 28,
+      "since_2021": 25
      }
     },
     {
@@ -8664,7 +8688,7 @@
     },
     {
      "year": 2026,
-     "citations": 5
+     "citations": 6
     }
    ]
   },
@@ -8675,7 +8699,7 @@
     "authors": "LA Sparrow, M Antonellos, M Gibbs, M Arnold",
     "publication": "Proceedings of DiGRA 2020 conference: play everywhere, 2020",
     "year": 2020,
-    "cites": 24
+    "cites": 25
    },
    {
     "title": "The Age of Icons: Digitising the Self in Profile Images",
@@ -8784,7 +8808,7 @@
   ]
  },
  "uBPNL1gAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Rajesh Chittor Sundaram",
   "cited_by": {
    "table": [
@@ -8878,7 +8902,7 @@
   ]
  },
  "lJCKz7IAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Sophie Freeman",
   "cited_by": {
    "table": [
@@ -8992,14 +9016,14 @@
   ]
  },
  "TVzqs2YAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Tawfiq Islam",
   "cited_by": {
    "table": [
     {
      "citations": {
-      "all": 442,
-      "since_2021": 412
+      "all": 444,
+      "since_2021": 414
      }
     },
     {
@@ -9038,7 +9062,7 @@
     },
     {
      "year": 2023,
-     "citations": 50
+     "citations": 51
     },
     {
      "year": 2024,
@@ -9050,7 +9074,7 @@
     },
     {
      "year": 2026,
-     "citations": 97
+     "citations": 98
     }
    ]
   },
@@ -9077,7 +9101,7 @@
     "authors": "MT Islam, H Wu, S Karunasekera, R Buyya",
     "publication": "IEEE Transactions on Computers 71 (5), 1117-1132, 2021",
     "year": 2021,
-    "cites": 68
+    "cites": 69
    },
    {
     "title": "dSpark: Deadline-based Resource Allocation for Big Data Applications in Apache Spark",
@@ -9109,7 +9133,7 @@
     "authors": "MT Islam, R Buyya",
     "publication": "Handbook of research on cloud computing and Big data applications in IoT, 1-23, 2019",
     "year": 2019,
-    "cites": 8
+    "cites": 9
    },
    {
     "title": "A multi-level caching architecture for stateful stream computation",
@@ -9258,14 +9282,14 @@
   ]
  },
  "6DTOhAEAAAAJ": {
-  "fetched_at": "2026-11-07T07:22:45+00:00",
+  "fetched_at": "2026-11-13T20:33:34+00:00",
   "name": "Philip Dart",
   "cited_by": {
    "table": [
     {
      "citations": {
-      "all": 1258,
-      "since_2021": 89
+      "all": 1259,
+      "since_2021": 90
      }
     },
     {
@@ -9428,11 +9452,11 @@
     },
     {
      "year": 2025,
-     "citations": 14
+     "citations": 13
     },
     {
      "year": 2026,
-     "citations": 12
+     "citations": 14
     }
    ]
   },
@@ -9451,7 +9475,7 @@
     "authors": "J Zobel, P Dart",
     "publication": "Software: Practice and Experience 25 (3), 331-345, 1995",
     "year": 1995,
-    "cites": 234
+    "cites": 235
    },
    {
     "title": "A Regular Type Language for Logic Programs.",
