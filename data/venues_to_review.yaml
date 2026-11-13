@@ -126,6 +126,7 @@ venues:
   - {name: "Learning Letters", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
   - {name: "Lecture notes in educational technology", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · OpenAlex says book
   - {name: "Mathematics", type: journal, rank: "Q2", reviewed: false}  # 1 paper (1 in the last 5 years) · rank from SCImago
+  - {name: "Multimodal Technologies and Interaction", type: journal, rank: "Q2", reviewed: false}  # 1 paper (1 in the last 5 years) · rank from SCImago
   - {name: "Neural Computing and Applications", type: journal, rank: "B", reviewed: false}  # 1 paper (1 in the last 5 years) · rank from CORE journals (CORE2020)
   - {name: "Open Conference on Computers in Education", type: conference, reviewed: false}  # 1 paper (1 in the last 5 years) · maybe ICORE: International Conference on Computers in Education (C)
   - {name: "Popular Music & Society", type: journal, reviewed: false}  # 1 paper (1 in the last 5 years)
